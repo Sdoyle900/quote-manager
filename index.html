@@ -736,14 +736,14 @@ function rangeRate(fid, name) { const f = famById(fid); const r = f.ranges.find(
 const itemFams = () => q.boxMode === 'products' ? [...new Set((q.prodRows || []).map(r => r.family))] : [];
 function itemCost(it, fam) {
   const qty = num(it.qty) || 0;
-  if (it.mode === 'sqm') return num(it.w) * num(it.h) * qty * rateOf(it.rate);
-  if (fam && it.pp && it.pp[fam] !== undefined && it.pp[fam] !== '') return num(it.pp[fam]) * qty;
-  return num(it.price) * qty;
+  if (it.mode === 'sqm') return num(it.w) * num(it.h) * qty * rateOf(it.rate) * uplift(it);
+  if (fam && it.pp && it.pp[fam] !== undefined && it.pp[fam] !== '') return num(it.pp[fam]) * qty * uplift(it);
+  return num(it.price) * qty * uplift(it);
 }
 function replCost(r) { const qty = num(r.qty) || 0; return r.per === 'total' ? num(r.price) : num(r.price) * qty; }
 function replLine(r) { const n = num(r.qty) || 0; const word = r.type === 'doors' ? (n === 1 ? 'door' : 'doors') : (n === 1 ? 'window' : 'windows'); return `Replacement of ${n} ${word}`; }
 const isTT = g => /tilt\s*(and|&|\+|n)\s*turn/i.test(g.label || '');
-const groupFixed = g => g.areaMode === 'fixed' ? Math.max(0, num(g.fixedPrice)) : 0;
+const groupFixed = g => g.areaMode === 'fixed' ? Math.max(0, num(g.fixedPrice)) * uplift(g) : 0;
 const ttExtra = g => isTT(g) ? Math.max(0, num(g.ttPrice)) * Math.max(0, num(g.ttQty)) : 0;
 function itemsTotal(fam) { return q.items.reduce((s, it) => s + itemCost(it, fam), 0) + (q.replacements || []).reduce((s, r) => s + replCost(r), 0) + Math.max(0, num(q.ctTax)) + q.groups.reduce((s, g) => s + ttExtra(g) + groupFixed(g), 0); }
 function roundTo(n) { const r = num(q.rounding); return r > 0 ? Math.round(n / r) * r : Math.round(n * 100) / 100; }
@@ -978,6 +978,11 @@ function renderItems() {
         <button class="btn x" type="button" data-del="items" data-i="${i}" aria-label="Remove item">✕</button>
       </div>
       ${custom ? `<span class="micwrap"><input data-list="items" data-i="${i}" data-f="desc" value="${esc(it.desc)}" placeholder="Type the item, e.g. Aluminium bifold door" aria-label="Item description (custom)"><button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button></span>` : ''}
+      <div class="row">
+        <label class="f">Glazing<select data-list="items" data-i="${i}" data-f="glazing">
+          <option value="double" ${it.glazing !== 'triple' ? 'selected' : ''}>Double glazed</option>
+          <option value="triple" ${it.glazing === 'triple' ? 'selected' : ''}>Triple glazed (+${esc(pricing.triplePct)}%)</option></select></label>
+      </div>
       <div class="ibot ${it.mode === 'sqm' ? 'sqm' : ''}">
         <label class="f">Priced by<select data-list="items" data-i="${i}" data-f="mode" data-rerender="items">
           <option value="fixed" ${it.mode !== 'sqm' ? 'selected' : ''}>Fixed price</option>
@@ -1076,7 +1081,7 @@ function updateNumbers() {
   if ($('showTriple')) { const allT = q.groups.every(g => g.glazing === 'triple'); $('showTriple').disabled = allT; if (allT) $('showTriple').checked = false; }
   if ($('ctOut')) $('ctOut').textContent = num(q.ctTax) > 0 ? `Adds ${eur(num(q.ctTax), 2)} to every price box. It isn't mentioned anywhere on the quote.` : 'Added to every price box. It isn\'t mentioned anywhere on the quote.';
   $('areaOut').textContent = area().toFixed(2) + ' m²';
-  q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = g.areaMode === 'fixed' ? `Fixed price ${eur(groupFixed(g))} added to every box` + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
+  q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = g.areaMode === 'fixed' ? (g.glazing === 'triple' ? `Fixed price ${eur(Math.max(0, num(g.fixedPrice)))} + triple glazing ${pricing.triplePct}% = ${eur(groupFixed(g))} added to every box` : `Fixed price ${eur(groupFixed(g))} added to every box`) + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
   q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.textContent = replLine(r) + ' · adds ' + eur(replCost(r), 2) + ' to every box'; });
   q.items.forEach((it, i) => { const el = document.querySelector(`[data-itemcalc="${i}"]`); if (!el) return; const fams = itemFams();
     el.textContent = it.mode !== 'sqm' && fams.length > 1 ? 'Adds ' + fams.map(fid => `${famById(fid).name} ${eur(itemCost(it, fid), 2)}`).join(' · ') + ' to that product\'s boxes' : 'Adds ' + eur(itemCost(it), 2) + ' to every box'; });
@@ -1096,10 +1101,10 @@ function scopeLines(fam) {
     let lbl = g.label || '';
     if (fam) lbl = !lbl || lbl === 'Windows' ? fam.label : PROD_LINE_OPTS.includes(lbl) ? `${fam.name} ${lbl.toLowerCase()}` : lbl;
     const n = winCount(g);
-    if (lbl) lines.push([n ? `${n} × ${lbl}` : lbl, g.where || '']);
+    if (lbl) lines.push([(n ? `${n} × ${lbl}` : lbl) + (g.glazing === 'triple' ? ' (triple glazed)' : ''), g.where || '']);
   });
   (q.replacements || []).forEach(r => num(r.qty) > 0 && lines.push([replLine(r), '']));
-  q.items.forEach(it => it.desc && lines.push([it.desc, '× ' + (num(it.qty) || 1)]));
+  q.items.forEach(it => it.desc && lines.push([it.desc + (it.glazing === 'triple' ? ' (triple glazed)' : ''), '× ' + (num(it.qty) || 1)]));
   return lines;
 }
 let docLayout = { p1:99, split:99 };   // set by renderDoc: how many blocks fit on page 1, and where page 2 ends
@@ -1152,7 +1157,7 @@ function docHTML() {
   }
 
   const ups = [];
-  if (q.tripleOption && !tripOn && !q.groups.every(g => g.glazing === 'triple')) ups.push(['Upgrade the whole house to triple glazing', '+' + pricing.triplePct + '%']);
+  if (q.tripleOption && !tripOn && !q.groups.some(g => g.glazing === 'triple')) ups.push(['Upgrade the whole house to triple glazing', '+' + pricing.triplePct + '%']);
   q.upgrades.forEach(u => u.desc && ups.push([u.desc, '+' + money(inc ? Math.round(num(u.amount) * vatMul) : num(u.amount)) + (inc ? ' incl. VAT' : '')]));
   const tail = [];
   if (ups.length) tail.push(`<h2>Optional upgrades</h2><table><tr><th>Option</th><th class="amt">Additional cost</th></tr>
