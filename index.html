@@ -725,6 +725,7 @@ function newGroup(fid) {
   return { family:f.id, glazing:'double', label:f.label, where:'Throughout', areaMode:'manual', manualArea:0, openings:[{label:'',w:'',h:'',qty:1}] };
 }
 function groupArea(g) {
+  if (g.areaMode === 'fixed') return 0;
   if (g.areaMode === 'openings') return (g.openings || []).reduce((s, o) => s + num(o.w) * num(o.h) * (num(o.qty) || 0), 0);
   return num(g.manualArea);
 }
@@ -739,8 +740,9 @@ function itemCost(it) {
 function replCost(r) { const qty = num(r.qty) || 0; return r.per === 'total' ? num(r.price) : num(r.price) * qty; }
 function replLine(r) { const n = num(r.qty) || 0; const word = r.type === 'doors' ? (n === 1 ? 'door' : 'doors') : (n === 1 ? 'window' : 'windows'); return `Replacement of ${n} ${word}`; }
 const isTT = g => /tilt\s*(and|&|\+|n)\s*turn/i.test(g.label || '');
+const groupFixed = g => g.areaMode === 'fixed' ? Math.max(0, num(g.fixedPrice)) : 0;
 const ttExtra = g => isTT(g) ? Math.max(0, num(g.ttPrice)) * Math.max(0, num(g.ttQty)) : 0;
-function itemsTotal() { return q.items.reduce((s, it) => s + itemCost(it), 0) + (q.replacements || []).reduce((s, r) => s + replCost(r), 0) + Math.max(0, num(q.ctTax)) + q.groups.reduce((s, g) => s + ttExtra(g), 0); }
+function itemsTotal() { return q.items.reduce((s, it) => s + itemCost(it), 0) + (q.replacements || []).reduce((s, r) => s + replCost(r), 0) + Math.max(0, num(q.ctTax)) + q.groups.reduce((s, g) => s + ttExtra(g) + groupFixed(g), 0); }
 function roundTo(n) { const r = num(q.rounding); return r > 0 ? Math.round(n / r) * r : Math.round(n * 100) / 100; }
 
 // Price boxes: up to 4. In "ranges" mode each box picks a range for every window group (paired, e.g. Future Proof / Alu-P).
@@ -792,12 +794,12 @@ function prodSel(f, count) {
 }
 function prodRowDefault(fid, count) {
   const f = famById(fid);
-  const n = Math.min(count || 1, f.ranges.length || 1);
+  const n = Math.min(count || 3, f.ranges.length || 1);
   return { family:f.id, count:n, sel:prodSel(f, n) };
 }
 function ensureProdRows(d) {
   if (!Array.isArray(d.prodRows) || !d.prodRows.length) {
-    d.prodRows = ['upvc', 'alu'].filter(id => pricing.families.some(f => f.id === id)).map(prodRowDefault);
+    d.prodRows = ['upvc', 'alu'].filter(id => pricing.families.some(f => f.id === id)).map(id => prodRowDefault(id, 3));
     if (!d.prodRows.length) d.prodRows = [prodRowDefault(pricing.families[0].id)];
   }
   d.prodRows = d.prodRows.slice(0, 4);
@@ -927,8 +929,8 @@ function renderGroups() {
         ${pickField(gi, 'Where', 'where', WHERE_OPTS, g.where, g.whereCustom, 'e.g. Front and side of house')}
       </div>
       <div class="row">
-        <label class="f">Work out area from<select data-g="${gi}" data-f="areaMode">${sel(g.areaMode === 'openings' ? 'openings' : 'manual', [['manual','Total area I type in'],['openings','List of openings (W × H)']])}</select></label>
-        ${g.areaMode === 'openings' ? '' : `<label class="f">Total area (m²)<input type="number" step="0.01" min="0" data-g="${gi}" data-f="manualArea" value="${esc(g.manualArea)}"></label>`}
+        <label class="f">Work out area from<select data-g="${gi}" data-f="areaMode">${sel(['openings','fixed'].includes(g.areaMode) ? g.areaMode : 'manual', [['manual','Total area I type in'],['openings','List of openings (W × H)'],['fixed','Fixed price']])}</select></label>
+        ${g.areaMode === 'fixed' ? `<label class="f">Fixed price (€, excl. VAT)<input type="number" step="1" min="0" data-g="${gi}" data-f="fixedPrice" value="${esc(g.fixedPrice ?? '')}" placeholder="e.g. 4500"></label>` : g.areaMode === 'openings' ? '' : `<label class="f">Total area (m²)<input type="number" step="0.01" min="0" data-g="${gi}" data-f="manualArea" value="${esc(g.manualArea)}"></label>`}
       </div>
       ${g.areaMode === 'openings' ? `<div class="list">${g.openings.map((o, oi) => `
         <div class="li open">
@@ -1061,7 +1063,7 @@ function updateNumbers() {
   if ($('showTriple')) { const allT = q.groups.every(g => g.glazing === 'triple'); $('showTriple').disabled = allT; if (allT) $('showTriple').checked = false; }
   if ($('ctOut')) $('ctOut').textContent = num(q.ctTax) > 0 ? `Adds ${eur(num(q.ctTax), 2)} to every price box. It isn't mentioned anywhere on the quote.` : 'Added to every price box. It isn\'t mentioned anywhere on the quote.';
   $('areaOut').textContent = area().toFixed(2) + ' m²';
-  q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
+  q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = g.areaMode === 'fixed' ? `Fixed price ${eur(groupFixed(g))} added to every box` + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
   q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.textContent = replLine(r) + ' · adds ' + eur(replCost(r), 2) + ' to every box'; });
   q.items.forEach((it, i) => { const el = document.querySelector(`[data-itemcalc="${i}"]`); if (el) el.textContent = 'Adds ' + eur(itemCost(it), 2) + ' to every box'; });
   boxRows().forEach(r => { const el = document.querySelector(`[data-boxprice="${r.key}"]`); if (el) el.textContent = money(r.calc); });
@@ -1312,7 +1314,7 @@ $('form').addEventListener('click', e => {
   else if ('addp' in ds) {
     const used = q.prodRows.map(r => r.family);
     const next = ['upvc', 'alu', 'hardwood', 'aluclad'].find(id => !used.includes(id) && pricing.families.some(f => f.id === id)) || (pricing.families.find(f => !used.includes(f.id)) || pricing.families[0]).id;
-    q.prodRows.push(prodRowDefault(next, q.prodRows.every(r => r.count === 1) ? 1 : 3)); ensureBoxes(); renderBoxes();
+    q.prodRows.push(prodRowDefault(next, 3)); ensureBoxes(); renderBoxes();
   }
   else return;
   refresh();
