@@ -87,7 +87,7 @@ table.calc input { width:90px; text-align:right; }
 .title .qtag { display:inline-block; background:var(--gold); color:var(--navy); font-size:7.5pt; font-weight:800; letter-spacing:2.5px; text-transform:uppercase; padding:0.7mm 2.8mm; border-radius:0.8mm; line-height:1.4; }
 .title .qhead { font-size:18pt; font-weight:700; color:var(--navy); letter-spacing:-0.3px; line-height:1.2; margin:2mm 0 3.5mm; padding-left:3mm; border-left:0.8mm solid var(--gold); text-wrap:balance; }
 .title .cname { font-size:10pt; font-weight:600; color:var(--navy); }
-.title .cname.empty { color:var(--line); }
+.title .cname.noname { color:var(--line); }
 .title .caddr { display:block; font-size:10pt; font-weight:400; color:var(--muted); letter-spacing:0; line-height:1.45; margin-top:0; white-space:pre-line; }
 .title .jref { margin-top:1.45em; font-size:10pt; font-weight:400; font-style:italic; color:var(--ink); }
 .title .jref b { font-weight:700; color:var(--navy); }
@@ -174,6 +174,9 @@ table.calc input { width:90px; text-align:right; }
   .page:last-child { page-break-after:auto; break-after:auto; }
 }
 
+/* while a quote is open, only the form and preview panels scroll, never the window */
+html:has(#editView:not([hidden])), html:has(#editView:not([hidden])) body { overflow:hidden; }
+
 /* ---------- Window groups and price boxes ---------- */
 .li.wgrp { align-items:stretch; gap:8px; }
 .li.wgrp .gh { display:flex; justify-content:space-between; align-items:center; }
@@ -199,9 +202,9 @@ table.calc td.c { text-align:center; }
 .optlbl2 { margin-top:3mm; }
 .card.trip { border-color:#c9cfe3; }
 .switches { display:grid; gap:8px; }
-.switch { display:grid; grid-template-columns:38px 1fr; gap:10px; align-items:start; cursor:pointer; font-size:12px; color:var(--muted); line-height:1.4; border:1px solid var(--ui-line); border-radius:8px; padding:9px 11px; background:#fff; }
+.switch { position:relative; display:grid; grid-template-columns:38px 1fr; gap:10px; align-items:start; cursor:pointer; font-size:12px; color:var(--muted); line-height:1.4; border:1px solid var(--ui-line); border-radius:8px; padding:9px 11px; background:#fff; }
 .switch b { display:block; color:var(--navy); font-size:12.5px; }
-.switch input { position:absolute; opacity:0; width:1px; height:1px; }
+.switch input { position:absolute; left:11px; top:10px; opacity:0; width:38px; height:22px; margin:0; }
 .switch .knob { width:38px; height:22px; border-radius:11px; background:#cfd3e0; position:relative; transition:background .15s; margin-top:1px; }
 .switch .knob::after { content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s; }
 .switch input:checked + .knob { background:#1f7a52; }
@@ -1165,7 +1168,7 @@ function docHTML() {
       <div class="title">
         <span class="qtag">Quotation</span>
         ${q.title ? `<div class="qhead">${esc(q.title)}</div>` : '<div style="height:3mm"></div>'}
-        <div class="cname ${q.client ? '' : 'empty'}">${esc(q.client || 'Customer name')}</div>
+        <div class="cname ${q.client ? '' : 'noname'}">${esc(q.client || 'Customer name')}</div>
         ${q.clientAddress && q.clientAddress.trim() ? `<span class="caddr">${esc(q.clientAddress.trim())}</span>` : ''}
         ${q.jobRef && q.jobRef.trim() ? `<div class="jref"><b>Job Reference:</b> ${esc(q.jobRef.trim())}</div>` : ''}
       </div>
@@ -1521,6 +1524,8 @@ function openEditor(r) {
   if (jobUnseen(fam)) { fam.forEach(x => { x.unseen = 0; }); saveRecs(); }
   $('listView').hidden = true; $('listActions').hidden = true;
   $('editView').hidden = false; $('editLeft').hidden = false; $('editActions').hidden = false;
+  window.scrollTo(0, 0); document.body.scrollTop = 0;
+  fitEditor();
   fullRender(); renderStatus(); renderRevBanner(); updateTitle();
   setReadOnly(!isLatest(r));
   $('revBtn').hidden = !isLatest(r);
@@ -2403,7 +2408,9 @@ $('importFile').onchange = async e => {
 
 // ---------- start ----------
 window.addEventListener('hashchange', route);
-window.addEventListener('resize', () => { if (cur) fitPreview(); });
+// size the editor to exactly the space under the top bar (the bar can wrap onto two lines on narrow screens)
+function fitEditor() { if ($('editView').hidden) return; $('editView').style.height = Math.max(300, window.innerHeight - document.querySelector('.bar').getBoundingClientRect().height) + 'px'; }
+window.addEventListener('resize', () => { if (cur) { fitEditor(); fitPreview(); } });
 window.addEventListener('beforeunload', saveRecs);
 seedExamples();
 renderMe();
