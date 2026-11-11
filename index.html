@@ -196,6 +196,20 @@ table.calc select { padding:4px 4px; min-width:0; width:100%; font-size:12px; }
 #boxTable th .w { display:block; font-weight:500; text-transform:none; letter-spacing:0; }
 table.calc td.c { text-align:center; }
 .ranges.n1 { max-width:75mm; margin:0 auto; }
+.optlbl2 { margin-top:3mm; }
+.card.trip { border-color:#c9cfe3; }
+.switches { display:grid; gap:8px; }
+.switch { display:grid; grid-template-columns:38px 1fr; gap:10px; align-items:start; cursor:pointer; font-size:12px; color:var(--muted); line-height:1.4; border:1px solid var(--ui-line); border-radius:8px; padding:9px 11px; background:#fff; }
+.switch b { display:block; color:var(--navy); font-size:12.5px; }
+.switch input { position:absolute; opacity:0; width:1px; height:1px; }
+.switch .knob { width:38px; height:22px; border-radius:11px; background:#cfd3e0; position:relative; transition:background .15s; margin-top:1px; }
+.switch .knob::after { content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s; }
+.switch input:checked + .knob { background:#1f7a52; }
+.switch input:checked + .knob::after { transform:translateX(16px); }
+.switch:has(input:checked) { border-color:#1f7a52; background:#f3faf6; }
+.switch input:focus-visible + .knob { outline:2px solid var(--gold); outline-offset:2px; }
+.switch:has(input:disabled) { opacity:.55; cursor:not-allowed; }
+@media (prefers-reduced-motion: reduce) { .switch .knob, .switch .knob::after { transition:none; } }
 .prows { display:grid; gap:2.4mm; }
 .prow { display:grid; grid-template-columns:24mm 1fr; gap:3mm; align-items:center; }
 .prow .plabel { font-size:8pt; letter-spacing:1.4px; text-transform:uppercase; color:var(--accent); font-weight:700; line-height:1.3; }
@@ -511,7 +525,10 @@ table.ql tr.newreply td:first-child { box-shadow:inset 4px 0 0 var(--gold); }
         <label class="f">Round totals to nearest<select id="rounding" data-k="rounding" data-num><option value="0">No rounding</option><option value="10">€10</option><option value="50">€50</option><option value="100">€100</option></select></label>
         <label class="f">VAT rate (%)<input id="vat" type="number" step="0.1" data-k="vat" data-num></label>
       </div>
-      <label class="check"><input type="checkbox" id="showIncVat" data-k="showIncVat"> Show price incl. VAT on the boxes</label>
+      <div class="switches">
+        <label class="switch"><input type="checkbox" id="showTriple" data-k="showTriple"><span class="knob" aria-hidden="true"></span><span><b>Show triple glazed prices</b>A second row of boxes underneath, each +<span id="tripPctLbl">12</span>%. Removes the triple glazing upgrade line.</span></label>
+        <label class="switch"><input type="checkbox" id="vatInc" data-k="vatInc"><span class="knob" aria-hidden="true"></span><span><b>Show prices including VAT</b>Every price on the quote includes VAT at the rate above.</span></label>
+      </div>
     </div></details>
 
     <details class="sec" open><summary>3. Windows</summary><div class="body">
@@ -661,7 +678,7 @@ function sampleQuote() {
     ],
     replacements:[{type:'windows', qty:4, price:350, per:'each'}],
     rounding:10, boxMode:'ranges', boxCount:3, boxes:null, featuredBox:1, boxOverrides:{},
-    vat:13.5, showIncVat:false,
+    vat:13.5, showIncVat:false, showTriple:false, vatInc:false,
     tripleOption:true,
     upgrades:[
       {desc:'Change the aluminium window to a 3-pane sliding door (1 sliding)', amount:2800},
@@ -1037,6 +1054,8 @@ function renderProdRows() {
     (q.prodRows.length < pricing.families.length ? `<button class="btn sm" type="button" data-addp style="justify-self:start">+ Add product (e.g. hardwood or alu-clad)</button>` : '');
 }
 function updateNumbers() {
+  if ($('tripPctLbl')) $('tripPctLbl').textContent = pricing.triplePct;
+  if ($('showTriple')) { const allT = q.groups.every(g => g.glazing === 'triple'); $('showTriple').disabled = allT; if (allT) $('showTriple').checked = false; }
   if ($('ctOut')) $('ctOut').textContent = num(q.ctTax) > 0 ? `Adds ${eur(num(q.ctTax), 2)} to every price box. It isn't mentioned anywhere on the quote.` : 'Added to every price box. It isn\'t mentioned anywhere on the quote.';
   $('areaOut').textContent = area().toFixed(2) + ' m²';
   q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
@@ -1061,15 +1080,23 @@ function docHTML() {
   const validUntil = q.date ? fmtDate(addDays(q.date, num(q.validDays))) : '';
   const isProd = q.boxMode === 'products';
   const multi = isProd && q.prodRows.length > 1;
-  const cardHTML = r => `
-    <div class="card ${r.featured ? 'feat f-' + (r.family || 'mixed') : ''}">
-      ${r.cap && !multi ? `<div class="name">${esc(r.cap)}</div>` : ''}<div class="range">${esc(r.label)}</div>
-      <div class="price">${money(r.final)}</div><div class="vat">excl. VAT</div>
-      ${q.showIncVat ? `<div class="inc">${money(Math.round(r.final * vatMul))} incl. VAT</div>` : ''}
+  // Prices shown: excl. VAT (default) or incl. VAT; an optional second row shows triple glazing (+triplePct) under the double glazed boxes.
+  const inc = !!(q.vatInc || q.showIncVat);
+  const showVat = v => inc ? roundTo(v * vatMul) : v;
+  const tripOn = !!q.showTriple && !q.groups.every(g => g.glazing === 'triple');
+  const tripOf = v => roundTo(v * (1 + num(pricing.triplePct) / 100));
+  const cardHTML = (r, t) => {
+    const cap = r.cap && !multi ? r.cap : '';
+    return `
+    <div class="card ${!t && r.featured ? 'feat f-' + (r.family || 'mixed') : ''} ${t ? 'trip' : ''}">
+      ${cap ? `<div class="name">${esc(cap)}</div>` : ''}<div class="range">${esc(r.label)}</div>
+      <div class="price">${money(showVat(t ? tripOf(r.final) : r.final))}</div><div class="vat">${inc ? 'incl. VAT' : 'excl. VAT'}</div>
     </div>`;
-  const grid = list => `<div class="ranges ${list.length >= 4 ? 'c4' : ''} n${list.length}" style="grid-template-columns:repeat(${Math.max(list.length, 1)},1fr)">${list.map(cardHTML).join('')}</div>`;
+  };
+  const oneGrid = (list, t) => `<div class="ranges ${list.length >= 4 ? 'c4' : ''} n${list.length}" style="grid-template-columns:repeat(${Math.max(list.length, 1)},1fr)">${list.map(r => cardHTML(r, t)).join('')}</div>`;
+  const tripHead = h => /double glazed$/.test(h) ? h.replace(/double glazed$/, 'triple glazed') : h + ', triple glazed';
   const scopeHTML = (lines, cls) => `<ul class="scope ${cls || ''}">${lines.map(([x, y]) => `<li><span>${esc(x)}</span><span class="q">${esc(y)}</span></li>`).join('')}</ul>`;
-  const vatNote = `<p class="sub">All prices are for supply and fit, and exclude VAT at ${num(q.vat)}%.</p>`;
+  const vatNote = `<p class="sub">All prices are for supply and fit, and ${inc ? 'include' : 'exclude'} VAT at ${num(q.vat)}%.</p>`;
   const glz = q.groups.every(g => g.glazing === 'triple') ? 'triple glazed' : 'double glazed';
 
   // Main blocks: scope + price, or one option per product (scope + price each)
@@ -1077,7 +1104,8 @@ function docHTML() {
   if (!multi) {
     main = [
       `<div class="blk"><h2>Scope of works</h2>${scopeHTML(scopeLines())}</div>`,
-      `<div class="blk"><h2>Your price — ${esc(priceHeading())}</h2>${grid(rows)}${vatNote}</div>`
+      `<div class="blk"><h2>Your price — ${esc(priceHeading())}</h2>${oneGrid(rows, false)}${tripOn ? '' : vatNote}</div>`,
+      ...(tripOn ? [`<div class="blk"><h2>Your price — ${esc(tripHead(priceHeading()))}</h2>${oneGrid(rows, true)}${vatNote}</div>`] : [])
     ];
   } else {
     const last = q.prodRows.length - 1;
@@ -1087,20 +1115,21 @@ function docHTML() {
         <div class="optblk f-${f.id}">
           <div class="opthead"><span class="optnum">Option ${ri + 1}</span><span class="optname">${esc(f.name)} <span>· ${glz}</span></span></div>
           <div class="optlbl">Scope of works</div>${scopeHTML(scopeLines(f.label), 'tight')}
-          <div class="optlbl">Price</div>${grid(rows.filter(r => r.row === ri))}
+          <div class="optlbl">${tripOn ? 'Price · double glazed' : 'Price'}</div>${oneGrid(rows.filter(r => r.row === ri), false)}
+          ${tripOn ? `<div class="optlbl optlbl2">Price · triple glazed</div>${oneGrid(rows.filter(r => r.row === ri), true)}` : ''}
         </div>${ri === last ? vatNote : ''}</div>`;
     });
   }
 
   const ups = [];
-  if (q.tripleOption && !q.groups.every(g => g.glazing === 'triple')) ups.push(['Upgrade the whole house to triple glazing', '+' + pricing.triplePct + '%']);
-  q.upgrades.forEach(u => u.desc && ups.push([u.desc, '+' + money(num(u.amount))]));
+  if (q.tripleOption && !tripOn && !q.groups.every(g => g.glazing === 'triple')) ups.push(['Upgrade the whole house to triple glazing', '+' + pricing.triplePct + '%']);
+  q.upgrades.forEach(u => u.desc && ups.push([u.desc, '+' + money(inc ? Math.round(num(u.amount) * vatMul) : num(u.amount)) + (inc ? ' incl. VAT' : '')]));
   const tail = [];
   if (ups.length) tail.push(`<h2>Optional upgrades</h2><table><tr><th>Option</th><th class="amt">Additional cost</th></tr>
       ${ups.map(([x, y]) => `<tr><td>${esc(x)}</td><td class="amt">${esc(y)}</td></tr>`).join('')}</table>`);
   tail.push(`<h2>Please note</h2>
     <div class="notes">
-      <div class="note"><b>VAT</b><p>Quote does not include VAT. The rate for supply and fit is ${num(q.vat)}%.</p></div>
+      <div class="note"><b>VAT</b><p>${inc ? `All prices include VAT at ${num(q.vat)}% for supply and fit.` : `Quote does not include VAT. The rate for supply and fit is ${num(q.vat)}%.`}</p></div>
       <div class="note"><b>Price validity</b><p>Prices are valid for ${num(q.validDays)} days${num(q.holdMonths) ? `, and can be held for ${num(q.holdMonths)} months with a deposit` : ''}.</p></div>
       <div class="note"><b>Showroom visits</b><p>Our showroom is by appointment only — please call ahead to arrange a visit.</p></div>
       <div class="note"><b>Questions?</b><p>Please don’t hesitate to get in touch; otherwise I will contact you over the coming days.</p></div>
