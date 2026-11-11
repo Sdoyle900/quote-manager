@@ -606,7 +606,9 @@ function itemCost(it) {
 }
 function replCost(r) { const qty = num(r.qty) || 0; return r.per === 'total' ? num(r.price) : num(r.price) * qty; }
 function replLine(r) { const n = num(r.qty) || 0; const word = r.type === 'doors' ? (n === 1 ? 'door' : 'doors') : (n === 1 ? 'window' : 'windows'); return `Replacement of ${n} ${word}`; }
-function itemsTotal() { return q.items.reduce((s, it) => s + itemCost(it), 0) + (q.replacements || []).reduce((s, r) => s + replCost(r), 0) + Math.max(0, num(q.ctTax)); }
+const isTT = g => /tilt\s*(and|&|\+|n)\s*turn/i.test(g.label || '');
+const ttExtra = g => isTT(g) ? Math.max(0, num(g.ttPrice)) * Math.max(0, num(g.ttQty)) : 0;
+function itemsTotal() { return q.items.reduce((s, it) => s + itemCost(it), 0) + (q.replacements || []).reduce((s, r) => s + replCost(r), 0) + Math.max(0, num(q.ctTax)) + q.groups.reduce((s, g) => s + ttExtra(g), 0); }
 function roundTo(n) { const r = num(q.rounding); return r > 0 ? Math.round(n / r) * r : Math.round(n * 100) / 100; }
 
 // Price boxes: up to 4. In "ranges" mode each box picks a range for every window group (paired, e.g. Future Proof / Alu-P).
@@ -766,6 +768,18 @@ function rateOptions(sel) {
   return pricing.families.map(f => `<optgroup label="${esc(f.name)}">` + f.ranges.map((r, i) =>
     `<option value="${f.id}:${i}" ${sel === f.id + ':' + i ? 'selected' : ''}>${esc(r.name)} (€${r.rate}/m²)</option>`).join('') + '</optgroup>').join('');
 }
+// Fixed choices for a window group's quote line and location; "Custom…" lets the rep type their own.
+const LINE_OPTS = ['uPVC casement windows', 'uPVC sliding sash windows', 'uPVC tilt and turn windows', 'Aluminium windows', 'Aluminium casement windows',
+  'Aluminium sliding doors', 'Alu-clad windows', 'Hardwood casement windows', 'Hardwood sliding sash windows', 'Windows'];
+const WHERE_OPTS = ['Throughout', 'Front of house', 'Rear of house', 'Side of house', 'Gable end', 'Extension', 'Upstairs', 'Downstairs'];
+function pickField(gi, title, key, opts, val, custom, ph) {
+  const isCustom = custom || (val && !opts.includes(val));
+  return `<div class="f" style="display:grid;gap:4px">
+    <label class="f">${title}<select data-g="${gi}" data-f="${key}Sel">${opts.map(o => `<option ${!isCustom && o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}
+      <option value="__custom" ${isCustom ? 'selected' : ''}>Custom…</option></select></label>
+    ${isCustom ? `<input data-g="${gi}" data-f="${key}" value="${esc(val)}" placeholder="${esc(ph)}" aria-label="${esc(title)} (custom)">` : ''}
+  </div>`;
+}
 function renderGroups() {
   const prod = q.boxMode === 'products';
   const sel = (v, opts) => opts.map(([val, txt]) => `<option value="${val}" ${v === val ? 'selected' : ''}>${esc(txt)}</option>`).join('');
@@ -777,8 +791,8 @@ function renderGroups() {
         <label class="f">Glazing<select data-g="${gi}" data-f="glazing">${sel(g.glazing === 'triple' ? 'triple' : 'double', [['double','Double glazed'],['triple','Triple glazed']])}</select></label>
       </div>
       <div class="row">
-        <label class="f">Line on quote<input data-g="${gi}" data-f="label" value="${esc(g.label)}"></label>
-        <label class="f">Where<input data-g="${gi}" data-f="where" value="${esc(g.where)}" placeholder="e.g. Front of house"></label>
+        ${pickField(gi, 'Line on quote', 'label', LINE_OPTS, g.label, g.labelCustom, 'Type the line for the quote')}
+        ${pickField(gi, 'Where', 'where', WHERE_OPTS, g.where, g.whereCustom, 'e.g. Front and side of house')}
       </div>
       <div class="row">
         <label class="f">Work out area from<select data-g="${gi}" data-f="areaMode">${sel(g.areaMode === 'openings' ? 'openings' : 'manual', [['manual','Total area I type in'],['openings','List of openings (W × H)']])}</select></label>
@@ -793,17 +807,32 @@ function renderGroups() {
           <button class="btn x" type="button" data-g="${gi}" data-delo="${oi}" aria-label="Remove opening">✕</button>
         </div>`).join('')}</div>
         <button class="btn sm" type="button" data-addo="${gi}" style="justify-self:start">+ Add opening</button>` : ''}
+      ${isTT(g) ? `<div class="row">
+        <label class="f">Tilt and turn extra, price each (€)<input type="number" step="1" min="0" data-g="${gi}" data-f="ttPrice" value="${esc(g.ttPrice ?? '')}" placeholder="e.g. 85"></label>
+        <label class="f">How many tilt and turn<input type="number" step="1" min="0" data-g="${gi}" data-f="ttQty" value="${esc(g.ttQty ?? '')}" placeholder="0"></label>
+      </div>` : ''}
       <div class="calc" data-garea="${gi}"></div>
     </div>`).join('');
 }
+const ITEM_OPTS = ['Lift and slide door', 'French door', 'Patio door', 'Single door', 'Composite front door', 'Lift and slide door (Alu-clad in Future Proof / Alu-P)'];
 function renderItems() {
-  $('itemsWrap').innerHTML = q.items.map((it, i) => `
+  // a description typed before the list existed, e.g. "french door", snaps to the listed wording
+  q.items.forEach(it => {
+    const hit = !it.descCustom && ITEM_OPTS.find(o => o.toLowerCase() === String(it.desc || '').trim().toLowerCase());
+    if (hit) it.desc = hit;
+  });
+  $('itemsWrap').innerHTML = q.items.map((it, i) => {
+    const custom = it.descCustom || (it.desc && !ITEM_OPTS.includes(it.desc));
+    return `
     <div class="li">
       <div class="itop">
-        <label class="f">Description<input data-list="items" data-i="${i}" data-f="desc" value="${esc(it.desc)}"></label>
+        <label class="f">Description<select data-list="items" data-i="${i}" data-f="descSel">
+          ${ITEM_OPTS.map(o => `<option ${!custom && o === it.desc ? 'selected' : ''}>${esc(o)}</option>`).join('')}
+          <option value="__custom" ${custom ? 'selected' : ''}>Custom…</option></select></label>
         <label class="f">Qty<input type="number" min="0" data-list="items" data-i="${i}" data-f="qty" value="${esc(it.qty)}"></label>
         <button class="btn x" type="button" data-del="items" data-i="${i}" aria-label="Remove item">✕</button>
       </div>
+      ${custom ? `<input data-list="items" data-i="${i}" data-f="desc" value="${esc(it.desc)}" placeholder="Type the item, e.g. Aluminium bifold door" aria-label="Item description (custom)">` : ''}
       <div class="ibot ${it.mode === 'sqm' ? 'sqm' : ''}">
         <label class="f">Priced by<select data-list="items" data-i="${i}" data-f="mode" data-rerender="items">
           <option value="fixed" ${it.mode !== 'sqm' ? 'selected' : ''}>Fixed price</option>
@@ -815,7 +844,7 @@ function renderItems() {
         : `<label class="f">Price each (€)<input type="number" step="1" data-list="items" data-i="${i}" data-f="price" value="${esc(it.price)}"></label>`}
       </div>
       <div class="calc" data-itemcalc="${i}"></div>
-    </div>`).join('') || '<p class="hint">No extra items.</p>';
+    </div>`; }).join('') || '<p class="hint">No extra items.</p>';
 }
 function renderReplacements() {
   $('replWrap').innerHTML = q.replacements.map((r, i) => `
@@ -898,7 +927,7 @@ function renderProdRows() {
 function updateNumbers() {
   if ($('ctOut')) $('ctOut').textContent = num(q.ctTax) > 0 ? `Adds ${eur(num(q.ctTax), 2)} to every price box. It isn't mentioned anywhere on the quote.` : 'Added to every price box. It isn\'t mentioned anywhere on the quote.';
   $('areaOut').textContent = area().toFixed(2) + ' m²';
-  q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : ''); });
+  q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
   q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.textContent = replLine(r) + ' · adds ' + eur(replCost(r), 2) + ' to every box'; });
   q.items.forEach((it, i) => { const el = document.querySelector(`[data-itemcalc="${i}"]`); if (el) el.textContent = 'Adds ' + eur(itemCost(it), 2) + ' to every box'; });
   boxRows().forEach(r => { const el = document.querySelector(`[data-boxprice="${r.key}"]`); if (el) el.textContent = money(r.calc); });
@@ -1043,8 +1072,26 @@ $('form').addEventListener('input', e => {
     const gi = +ds.g, g = q.groups[gi];
     if (ds.o !== undefined) g.openings[+ds.o][ds.f] = el.value;
     else {
-      const prev = g[ds.f];
+      if (ds.f === 'labelSel' || ds.f === 'whereSel') {
+        const key = ds.f === 'labelSel' ? 'label' : 'where', flag = key + 'Custom';
+        if (el.value === '__custom') { g[flag] = true; renderGroups(); const box = document.querySelector(`[data-g="${gi}"][data-f="${key}"]`); if (box) { box.focus(); box.select(); } }
+        else {
+          g[key] = el.value; g[flag] = false;
+          if (key === 'label' && isTT(g) && (g.ttPrice === undefined || g.ttPrice === '') && pricing.ttLast) g.ttPrice = pricing.ttLast;
+          renderGroups(); if (key === 'where') renderBoxes();
+        }
+        refresh();
+        return;
+      }
+      const prev = g[ds.f], wasTT = isTT(g);
       g[ds.f] = el.value;
+      if (ds.f === 'ttPrice' && num(el.value) > 0) { pricing.ttLast = el.value; store.set('sdw-pricing', pricing); }
+      if (ds.f === 'label' && wasTT !== isTT(g)) {
+        if (isTT(g) && (g.ttPrice === undefined || g.ttPrice === '') && pricing.ttLast) g.ttPrice = pricing.ttLast;
+        renderGroups();
+        const box = document.querySelector(`[data-g="${gi}"][data-f="label"]`);
+        if (box) { box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
+      }
       if (ds.f === 'family') {
         if (!g.label || g.label === famById(prev).label) g.label = famById(g.family).label;
         q.boxes.forEach((b, i) => { if (b && b.sel) b.sel[gi] = defaultSel(q, i, gi); });
@@ -1075,6 +1122,12 @@ $('form').addEventListener('input', e => {
     q.featuredBox = 1; q.prodRows = null;
     if (q.boxMode === 'ranges' && q.boxCount < 3) q.boxCount = 3;
     ensureBoxes(); renderGroups(); renderBoxes();
+  } else if (ds.list && ds.f === 'descSel') {
+    const it = q.items[+ds.i];
+    if (el.value === '__custom') {
+      it.descCustom = true; renderItems();
+      const box = document.querySelector(`[data-list="items"][data-i="${ds.i}"][data-f="desc"]`); if (box) { box.focus(); box.select(); }
+    } else { it.desc = el.value; it.descCustom = false; renderItems(); }
   } else if (ds.list) {
     const it = q[ds.list][+ds.i];
     it[ds.f] = el.value;
@@ -1132,7 +1185,7 @@ $('addGroup').onclick = () => {
   ensureBoxes(); renderGroups(); renderBoxes(); refresh();
 };
 $('addRepl').onclick = () => { q.replacements.push({type:'windows', qty:1, price:'', per:'each'}); renderReplacements(); refresh(); };
-$('addItem').onclick = () => { q.items.push({desc:'', qty:1, mode:'fixed', price:'', w:'', h:'', rate:'alu:0'}); renderItems(); refresh(); };
+$('addItem').onclick = () => { q.items.push({desc:ITEM_OPTS[0], qty:1, mode:'fixed', price:'', w:'', h:'', rate:'alu:0'}); renderItems(); refresh(); };
 $('addUp').onclick = () => { q.upgrades.push({desc:'', amount:''}); renderUpgrades(); refresh(); };
 $('resetPricing').onclick = () => { if (!confirm('Reset all m² rates to the 2026 price list?')) return; pricing = JSON.parse(JSON.stringify(DEFAULT_PRICING)); store.set('sdw-pricing', pricing); fullRender(); toast('Price list reset'); };
 
