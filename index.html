@@ -947,6 +947,9 @@ function renderGroups() {
           <button class="btn x" type="button" data-g="${gi}" data-delo="${oi}" aria-label="Remove opening">✕</button>
         </div>`).join('')}</div>
         <button class="btn sm" type="button" data-addo="${gi}" style="justify-self:start">+ Add opening</button>` : ''}
+      <div class="row">
+        <label class="f">Number of windows<input type="number" step="1" min="0" data-g="${gi}" data-f="winQty" value="${esc(g.winQty ?? '')}" placeholder="${g.areaMode === 'openings' ? 'Counted from openings' : 'e.g. 8'}"></label>
+      </div>
       ${isTT(g) ? `<div class="row">
         <label class="f">Tilt and turn extra, price each (€)<input type="number" step="1" min="0" data-g="${gi}" data-f="ttPrice" value="${esc(g.ttPrice ?? '')}" placeholder="e.g. 85"></label>
         <label class="f">How many tilt and turn<input type="number" step="1" min="0" data-g="${gi}" data-f="ttQty" value="${esc(g.ttQty ?? '')}" placeholder="0"></label>
@@ -1081,9 +1084,20 @@ function updateNumbers() {
 }
 
 // ---------- document rendering ----------
-function scopeLines(productLabel) {
+// Number of windows in a group: typed in, or counted from the openings list.
+function winCount(g) {
+  if (g.winQty !== undefined && g.winQty !== '') return Math.max(0, Math.round(num(g.winQty)));
+  return g.areaMode === 'openings' ? (g.openings || []).reduce((s, o) => s + (num(o.w) && num(o.h) ? (num(o.qty) || 0) : 0), 0) : 0;
+}
+function scopeLines(fam) {
   const lines = [];
-  q.groups.forEach(g => { const lbl = productLabel || g.label; if (lbl) lines.push([lbl, g.where || '']); });
+  q.groups.forEach(g => {
+    // "Different products": the product name goes in front of the window type, e.g. "Aluminium tilt and turn windows".
+    let lbl = g.label || '';
+    if (fam) lbl = !lbl || lbl === 'Windows' ? fam.label : PROD_LINE_OPTS.includes(lbl) ? `${fam.name} ${lbl.toLowerCase()}` : lbl;
+    const n = winCount(g);
+    if (lbl) lines.push([n ? `${n} × ${lbl}` : lbl, g.where || '']);
+  });
   (q.replacements || []).forEach(r => num(r.qty) > 0 && lines.push([replLine(r), '']));
   q.items.forEach(it => it.desc && lines.push([it.desc, '× ' + (num(it.qty) || 1)]));
   return lines;
@@ -1130,7 +1144,7 @@ function docHTML() {
       return `<div class="blk">${ri === 0 ? '<h2>Your options</h2>' : ''}
         <div class="optblk f-${f.id}">
           <div class="opthead"><span class="optnum">Option ${ri + 1}</span><span class="optname">${esc(f.name)} <span>· ${glz}</span></span></div>
-          <div class="optlbl">Scope of works</div>${scopeHTML(scopeLines(f.label), 'tight')}
+          <div class="optlbl">Scope of works</div>${scopeHTML(scopeLines(f), 'tight')}
           <div class="optlbl">${tripOn ? 'Price · double glazed' : 'Price'}</div>${oneGrid(rows.filter(r => r.row === ri), false)}
           ${tripOn ? `<div class="optlbl optlbl2">Price · triple glazed</div>${oneGrid(rows.filter(r => r.row === ri), true)}` : ''}
         </div>${ri === last ? vatNote : ''}</div>`;
