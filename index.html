@@ -82,23 +82,27 @@ table.calc input { width:90px; text-align:right; }
 .page header img { height:20mm; }
 .addr { text-align:right; font-size:8.5pt; color:var(--muted); line-height:1.55; }
 .addr b { color:var(--navy); font-weight:600; }
-.meta { display:flex; justify-content:space-between; align-items:flex-start; gap:6mm; margin:7mm 0 6mm; }
+.meta { display:flex; justify-content:space-between; align-items:flex-start; gap:6mm; margin:6mm 0 5mm; }
 .title { font-size:10pt; font-weight:600; color:var(--navy); letter-spacing:0; line-height:1.45; }
-.title small { display:block; font-size:9pt; font-weight:600; color:var(--accent); letter-spacing:2px; text-transform:uppercase; margin-bottom:2mm; }
+.title .qtag { display:inline-block; background:var(--gold); color:var(--navy); font-size:7.5pt; font-weight:800; letter-spacing:2.5px; text-transform:uppercase; padding:0.7mm 2.8mm; border-radius:0.8mm; line-height:1.4; }
+.title .qhead { font-size:18pt; font-weight:700; color:var(--navy); letter-spacing:-0.3px; line-height:1.2; margin:2mm 0 3.5mm; padding-left:3mm; border-left:0.8mm solid var(--gold); text-wrap:balance; }
+.title .cname { font-size:10pt; font-weight:600; color:var(--navy); }
+.title .cname.empty { color:var(--line); }
 .title .caddr { display:block; font-size:10pt; font-weight:400; color:var(--muted); letter-spacing:0; line-height:1.45; margin-top:0; white-space:pre-line; }
-.title.empty { color:var(--line); }
+.title .jref { margin-top:1.45em; font-size:10pt; font-weight:400; font-style:italic; color:var(--ink); }
+.title .jref b { font-weight:700; color:var(--navy); }
 .facts { display:grid; grid-template-columns:auto auto; gap:1mm 6mm; font-size:9pt; background:var(--tint); padding:4mm 6mm; border-radius:2mm; flex:none; }
 .facts span { color:var(--muted); }
 .facts b { color:var(--navy); text-align:right; }
 .intro p { margin-bottom:3mm; white-space:pre-line; }
 .intro .hello { font-weight:600; color:var(--navy); font-size:11.5pt; }
-.usp { display:grid; grid-template-columns:repeat(3,1fr); gap:4mm; margin:5mm 0 7mm; }
+.usp { display:grid; grid-template-columns:repeat(3,1fr); gap:4mm; margin:4.5mm 0 6mm; }
 .usp div { border-top:2.5px solid var(--accent); background:var(--tint); padding:4mm; border-radius:0 0 2mm 2mm; }
 .usp b { display:block; color:var(--navy); font-size:10pt; margin-bottom:1mm; }
 .usp p { font-size:8.5pt; color:var(--muted); line-height:1.45; }
 .page h2 { font-size:12pt; color:var(--navy); font-weight:700; margin-bottom:3mm; display:flex; align-items:center; gap:3mm; }
 .page h2::before { content:""; width:4mm; height:4mm; background:var(--gold); border-radius:1px; flex:none; }
-.scope { list-style:none; margin-bottom:8mm; border:1px solid var(--line); border-radius:2mm; }
+.scope { list-style:none; margin-bottom:6.5mm; border:1px solid var(--line); border-radius:2mm; }
 .scope li { padding:2.6mm 5mm; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:4mm; }
 .scope li:last-child { border-bottom:none; }
 .scope .q { color:var(--muted); font-size:9pt; white-space:nowrap; }
@@ -106,12 +110,16 @@ table.calc input { width:90px; text-align:right; }
 .card { border:1px solid var(--line); border-radius:2.5mm; padding:5mm 3mm; text-align:center; }
 .card .name { font-size:8.5pt; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); font-weight:600; }
 .card .range { font-size:13pt; font-weight:700; color:var(--navy); margin:1mm 0 3mm; }
-.card .price { font-size:21pt; font-weight:700; color:var(--navy); letter-spacing:-0.5px; font-variant-numeric:tabular-nums; }
+.card .price { font-size:21pt; font-weight:700; color:var(--navy); letter-spacing:-0.5px; }
 .ranges.c4 .card .price { font-size:17pt; }
 .card .vat { font-size:8pt; color:var(--muted); margin-top:1mm; }
 .card .inc { font-size:8.5pt; color:var(--navy); font-weight:600; margin-top:1.5mm; }
 .card.feat { background:var(--navy); border-color:var(--navy); }
-.card.feat .name, .card.feat .vat { color:#b9bed6; }
+.card.feat .name, .card.feat .vat { color:rgba(255,255,255,.75); }
+/* highlighted box colour by product: uPVC green, aluminium pink, hardwood blue (others navy) */
+.card.feat.f-upvc { background:#1f7a52; border-color:#1f7a52; }
+.card.feat.f-alu { background:#c2185b; border-color:#c2185b; }
+.card.feat.f-hardwood { background:#1d4f9a; border-color:#1d4f9a; }
 .card.feat .range, .card.feat .price, .card.feat .inc { color:#fff; }
 .sub { font-size:8.5pt; color:var(--muted); margin-top:3mm; text-align:center; }
 .page footer { position:absolute; bottom:0; left:0; right:0; background:var(--navy); color:#c9cde0; font-size:8pt; padding:4mm 18mm; display:flex; justify-content:space-between; }
@@ -119,7 +127,7 @@ table.calc input { width:90px; text-align:right; }
 .page table { width:100%; border-collapse:collapse; margin-bottom:8mm; }
 .page th { text-align:left; font-size:8pt; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-weight:600; padding:0 4mm 2mm; border-bottom:2px solid var(--navy); }
 .page td { padding:3.5mm 4mm; border-bottom:1px solid var(--line); }
-.page td.amt { text-align:right; font-weight:700; color:var(--navy); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.page td.amt { text-align:right; font-weight:700; color:var(--navy); white-space:nowrap; }
 .page th.amt { text-align:right; }
 .notes { display:grid; grid-template-columns:1fr 1fr; gap:4mm; margin-bottom:8mm; }
 .note { background:var(--tint); border-left:3px solid var(--accent); padding:4mm 5mm; border-radius:0 2mm 2mm 0; }
@@ -158,10 +166,10 @@ table.calc input { width:90px; text-align:right; }
 }
 
 /* ---------- Window groups and price boxes ---------- */
-.li.grp { align-items:stretch; gap:8px; }
-.li.grp .gh { display:flex; justify-content:space-between; align-items:center; }
-.li.grp .gh b { color:var(--navy); font-size:12.5px; }
-.li.grp .list .li.open { background:#fff; }
+.li.wgrp { align-items:stretch; gap:8px; }
+.li.wgrp .gh { display:flex; justify-content:space-between; align-items:center; }
+.li.wgrp .gh b { color:var(--navy); font-size:12.5px; }
+.li.wgrp .list .li.open { background:#fff; }
 .mode { display:grid; gap:6px; }
 .opt { display:flex; gap:9px; align-items:flex-start; border:1px solid var(--ui-line); border-radius:7px; padding:9px 11px; background:#fff; cursor:pointer; font-size:12px; color:var(--muted); line-height:1.4; }
 .opt:has(input:checked) { border-color:var(--navy); box-shadow:inset 3px 0 0 var(--navy); background:#f7f8fc; }
@@ -179,6 +187,20 @@ table.calc select { padding:4px 4px; min-width:0; width:100%; font-size:12px; }
 #boxTable th .w { display:block; font-weight:500; text-transform:none; letter-spacing:0; }
 table.calc td.c { text-align:center; }
 .ranges.n1 { max-width:75mm; margin:0 auto; }
+.prows { display:grid; gap:2.4mm; }
+.prow { display:grid; grid-template-columns:24mm 1fr; gap:3mm; align-items:center; }
+.prow .plabel { font-size:8pt; letter-spacing:1.4px; text-transform:uppercase; color:var(--accent); font-weight:700; line-height:1.3; }
+.prow .plabel span { display:block; letter-spacing:0; text-transform:none; color:var(--muted); font-weight:500; }
+.ranges.compact { gap:3mm; }
+.ranges.compact .card { padding:2.4mm 2mm; }
+.ranges.compact .card .range { font-size:10pt; margin:0 0 0.4mm; }
+.ranges.compact .card .price { font-size:15pt; line-height:1.15; }
+.ranges.compact .card .vat { display:none; }
+.price-p2 { margin-bottom:8mm; }
+#prodWrap .seg button { padding:4px 10px; }
+.li table.calc { color:var(--ink); font-weight:400; font-size:12.5px; }
+.li table.calc td:first-child { white-space:nowrap; font-weight:700; color:var(--navy); }
+#prodWrap .pr-top { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:end; }
 .ranges.n2 { max-width:140mm; margin:0 auto; }
 
 /* ---------- Quote Manager additions ---------- */
@@ -317,6 +339,7 @@ table.ql tr.newreply td:first-child { box-shadow:inset 4px 0 0 var(--gold); }
         <label class="f">Valid (days)<input id="validDays" type="number" min="1" data-k="validDays" data-num></label>
         <label class="f">Hold w/ deposit (months)<input id="holdMonths" type="number" min="0" data-k="holdMonths" data-num></label>
       </div>
+      <label class="f">Job reference (optional, e.g. for builders; shown under the address)<input id="jobRef" data-k="jobRef" placeholder="e.g. Clonsilla Phase 2, Unit 14"></label>
       <label class="f">Customer address (shown under the name on the quote)<textarea id="clientAddress" data-k="clientAddress" placeholder="Street&#10;Town&#10;County / Eircode" style="min-height:62px"></textarea></label>
       <div class="row">
         <label class="f">Phone<input id="clientPhone" type="tel" data-k="clientPhone"></label>
@@ -327,38 +350,39 @@ table.ql tr.newreply td:first-child { box-shadow:inset 4px 0 0 var(--gold); }
       <label class="f">Intro paragraph<textarea id="intro" data-k="intro"></textarea></label>
     </div></details>
 
-    <details class="sec" open><summary>2. Windows</summary><div class="body">
+    <details class="sec" open><summary>2. Your price boxes</summary><div class="body">
+      <div class="mode">
+        <label class="opt"><input type="radio" name="boxMode" value="ranges" data-mode><span><b>Ranges of one product</b>e.g. Future Proof, Greenline, Odyssey. With a front and rear group, each box pairs a range for each, e.g. Future Proof / Alu-P.</span></label>
+        <label class="opt"><input type="radio" name="boxMode" value="products" data-mode><span><b>Different products for the same windows</b>e.g. one price in uPVC and one in aluminium, side by side. Add hardwood or alu-clad if needed, or show more than one range per product.</span></label>
+      </div>
+      <div class="cnt" id="countRow">Number of boxes <span class="seg" id="countSeg"></span></div>
+      <div style="overflow-x:auto" id="boxTableWrap"><table class="calc" id="boxTable"></table></div>
+      <div id="prodWrap" class="list" hidden></div>
+      <p class="hint">Pick which range goes in each box. Type in Override to set a box price by hand. The ★ box is highlighted on the quote: green for uPVC, pink for aluminium, blue for hardwood, navy for anything else.</p>
+      <div class="row">
+        <label class="f">Round totals to nearest<select id="rounding" data-k="rounding" data-num><option value="0">No rounding</option><option value="10">€10</option><option value="50">€50</option><option value="100">€100</option></select></label>
+        <label class="f">VAT rate (%)<input id="vat" type="number" step="0.1" data-k="vat" data-num></label>
+      </div>
+      <label class="check"><input type="checkbox" id="showIncVat" data-k="showIncVat"> Show price incl. VAT on the boxes</label>
+    </div></details>
+
+    <details class="sec" open><summary>3. Windows</summary><div class="body">
       <div id="groupsWrap" class="list"></div>
       <button class="btn sm" id="addGroup" type="button" style="justify-self:start">+ Add window group</button>
       <p class="hint">Add a second group when part of the house is a different product, e.g. uPVC to the front and aluminium to the rear.</p>
       <div class="areabox"><span>Total window area</span><b id="areaOut">0.00 m²</b></div>
     </div></details>
 
-    <details class="sec" open><summary>3. Replacements (fixed price)</summary><div class="body">
-      <p class="hint">Adds a "Replacement of …" line to the scope of works and adds the price to every range.</p>
-      <div id="replWrap" class="list"></div>
-      <button class="btn sm" id="addRepl" type="button">+ Add replacement</button>
-    </div></details>
-
     <details class="sec" open><summary>4. Extra items in the price</summary><div class="body">
-      <p class="hint">Doors and other items added to every range price, such as an aluminium slider. Each is listed under scope of works.</p>
+      <p class="hint">Doors and other items added to every price box, such as an aluminium slider. Each is listed under scope of works.</p>
       <div id="itemsWrap" class="list"></div>
       <button class="btn sm" id="addItem" type="button">+ Add item</button>
     </div></details>
 
-    <details class="sec" open><summary>5. Your price boxes</summary><div class="body">
-      <div class="mode">
-        <label class="opt"><input type="radio" name="boxMode" value="ranges" data-mode><span><b>Ranges of one product</b>e.g. Future Proof, Greenline, Odyssey. With a front and rear group, each box pairs a range for each, e.g. Future Proof / Alu-P.</span></label>
-        <label class="opt"><input type="radio" name="boxMode" value="products" data-mode><span><b>Different products for the same windows</b>e.g. one price in uPVC and one in aluminium. Each box picks its own product and range.</span></label>
-      </div>
-      <div class="cnt">Number of boxes <span class="seg" id="countSeg"></span></div>
-      <div style="overflow-x:auto"><table class="calc" id="boxTable"></table></div>
-      <p class="hint">Pick which range goes in each box. Type in Override to set a box price by hand. The ★ box is highlighted in navy on the quote.</p>
-      <div class="row">
-        <label class="f">Round totals to nearest<select id="rounding" data-k="rounding" data-num><option value="0">No rounding</option><option value="10">€10</option><option value="50">€50</option><option value="100">€100</option></select></label>
-        <label class="f">VAT rate (%)<input id="vat" type="number" step="0.1" data-k="vat" data-num></label>
-      </div>
-      <label class="check"><input type="checkbox" id="showIncVat" data-k="showIncVat"> Show price incl. VAT on the boxes</label>
+    <details class="sec" open><summary>5. Replacements (fixed price)</summary><div class="body">
+      <p class="hint">Adds a "Replacement of …" line to the scope of works and adds the price to every price box.</p>
+      <div id="replWrap" class="list"></div>
+      <button class="btn sm" id="addRepl" type="button">+ Add replacement</button>
     </div></details>
 
     <details class="sec" open><summary>6. Optional upgrades</summary><div class="body">
@@ -453,7 +477,7 @@ const DEFAULT_PRICING = {
 
 function sampleQuote() {
   return {
-    client:'Oisin', clientAddress:'', clientPhone:'', clientEmail:'', ref:'RR14', date:'2026-10-06', validDays:30, holdMonths:6,
+    client:'Oisin', jobRef:'', clientAddress:'', clientPhone:'', clientEmail:'', ref:'RR14', date:'2026-10-06', validDays:30, holdMonths:6,
     title:'New Ope Windows & Doors',
     intro:'Thank you for giving us the opportunity to quote for this project. We are a family-run company with over forty years’ experience in the business. Please see below prices for the following items and the ranges available to you.',
     groups:[{ family:'upvc', glazing:'double', label:'uPVC casement windows', where:'Throughout', areaMode:'manual', manualArea:29.34, openings:[{label:'',w:'',h:'',qty:1}] }],
@@ -474,7 +498,7 @@ function sampleQuote() {
 }
 function blankQuote(prev) {
   const q = sampleQuote();
-  Object.assign(q, { client:'', ref:'', date:new Date().toISOString().slice(0,10),
+  Object.assign(q, { client:'', jobRef:'', ref:'', date:new Date().toISOString().slice(0,10),
     groups:[newGroup('upvc')], boxMode:'ranges', boxCount:3, boxes:null, featuredBox:1, boxOverrides:{},
     items:[], replacements:[], upgrades:[] });
   if (prev) { q.signName = prev.signName; q.signMobile = prev.signMobile; q.signDublin = prev.signDublin; }
@@ -537,6 +561,17 @@ function ensureBoxes(d) {
   d.boxMode = d.boxMode === 'products' ? 'products' : 'ranges';
   d.boxCount = Math.min(4, Math.max(1, Math.round(num(d.boxCount)) || 3));
   if (!Array.isArray(d.boxes)) d.boxes = [];
+  // A quote saved in "different products" mode before product rows existed: turn its boxes into rows.
+  if (d.boxMode === 'products' && !Array.isArray(d.prodRows) && d.boxes.some(b => b && b.family)) {
+    const rows = [];
+    d.boxes.slice(0, d.boxCount).forEach(b => {
+      if (!b || !b.family) return;
+      let r = rows.find(x => x.family === b.family);
+      if (!r) rows.push(r = { family:b.family, count:0, sel:[] });
+      r.sel[r.count++] = b.range;
+    });
+    d.prodRows = rows;
+  }
   if (!d.boxOverrides || typeof d.boxOverrides !== 'object') d.boxOverrides = {};
   for (let i = 0; i < 4; i++) {
     const b = d.boxes[i] = d.boxes[i] || {};
@@ -548,11 +583,56 @@ function ensureBoxes(d) {
     else if (!pf.ranges.some(r => r.name === b.range)) b.range = (pf.ranges[1] || pf.ranges[0]).name;
   }
   d.boxes.length = 4;
+  if (d.boxMode === 'products') ensureProdRows(d);
   if (typeof d.featuredBox !== 'number') d.featuredBox = Math.min(1, d.boxCount - 1);
   if (d.featuredBox >= d.boxCount) d.featuredBox = d.boxCount - 1;
   return d;
 }
+function prodSel(f, count) {
+  const rs = f.ranges, mid = rs[1] || rs[0];
+  if (count === 1) return [mid, ...rs.filter(r => r !== mid)].concat(rs).slice(0, 4).map(r => (r || {}).name);
+  return [0, 1, 2, 3].map(i => (rs[Math.min(i, rs.length - 1)] || {}).name);
+}
+function prodRowDefault(fid, count) {
+  const f = famById(fid);
+  const n = Math.min(count || 1, f.ranges.length || 1);
+  return { family:f.id, count:n, sel:prodSel(f, n) };
+}
+function ensureProdRows(d) {
+  if (!Array.isArray(d.prodRows) || !d.prodRows.length) {
+    d.prodRows = ['upvc', 'alu'].filter(id => pricing.families.some(f => f.id === id)).map(prodRowDefault);
+    if (!d.prodRows.length) d.prodRows = [prodRowDefault(pricing.families[0].id)];
+  }
+  d.prodRows = d.prodRows.slice(0, 4);
+  d.prodRows.forEach(r => {
+    if (!pricing.families.some(f => f.id === r.family)) Object.assign(r, prodRowDefault(pricing.families[0].id));
+    const f = famById(r.family);
+    r.count = Math.min(4, f.ranges.length || 1, Math.max(1, Math.round(num(r.count)) || 1));
+    if (!Array.isArray(r.sel)) r.sel = [];
+    for (let i = 0; i < 4; i++) if (!f.ranges.some(x => x.name === r.sel[i])) r.sel[i] = (f.ranges[Math.min(i, f.ranges.length - 1)] || {}).name;
+    r.sel.length = 4;
+  });
+  const keys = d.prodRows.flatMap((r, ri) => Array.from({ length:r.count }, (_, i) => `p${ri}:${i}`));
+  if (d.featuredKey === undefined) d.featuredKey = keys.includes('p0:1') ? 'p0:1' : (keys[0] || '');
+  if (d.featuredKey && !keys.includes(d.featuredKey)) d.featuredKey = '';
+}
 function boxRows() {
+  ensureBoxes(q);
+  if (q.boxMode === 'products') {
+    const extra = itemsTotal(), out = [];
+    q.prodRows.forEach((pr, ri) => {
+      const f = famById(pr.family);
+      for (let i = 0; i < pr.count; i++) {
+        const key = `p${ri}:${i}`, range = pr.sel[i];
+        const windows = q.groups.reduce((s, g) => s + groupArea(g) * rangeRate(pr.family, range) * uplift(g), 0);
+        const calc = roundTo(windows + extra);
+        const ov = q.boxOverrides[key];
+        const final = ov !== undefined && ov !== '' ? num(ov) : calc;
+        out.push({ i, key, row:ri, family:f.id, windows, calc, final, ov, label:range, cap:f.name, featured:q.featuredKey === key });
+      }
+    });
+    return out;
+  }
   ensureBoxes(q);
   const extra = itemsTotal(), rows = [];
   for (let i = 0; i < q.boxCount; i++) {
@@ -569,14 +649,14 @@ function boxRows() {
     const calc = roundTo(windows + extra);
     const ov = q.boxOverrides[i];
     const final = ov !== undefined && ov !== '' ? num(ov) : calc;
-    rows.push({ i, windows, calc, final, ov, label:uParts.join(' / '), cap: uFams.length === 1 ? uFams[0] : '' });
+    rows.push({ i, key:String(i), row:0, windows, calc, final, ov, label:uParts.join(' / '), cap: uFams.length === 1 ? uFams[0] : '', family: new Set(q.groups.map(g => g.family)).size === 1 ? q.groups[0].family : '', featured:q.featuredBox === i });
   }
   return rows;
 }
 function priceHeading() {
   const lc = (s, k) => (k === 0 || s === 'uPVC') ? s : s.toLowerCase();
   if (q.boxMode === 'products') {
-    const fs = [...new Set(q.boxes.slice(0, q.boxCount).map(b => famById(b.family).name))];
+    const fs = [...new Set(q.prodRows.map(r => famById(r.family).name))];
     return fs.map(lc).join(fs.length === 2 ? ' or ' : ', ');
   }
   if (q.groups.length === 1) { const g = q.groups[0]; return famById(g.family).name + (g.glazing === 'triple' ? ' triple glazed' : ' double glazed'); }
@@ -621,7 +701,7 @@ function renderGroups() {
   const prod = q.boxMode === 'products';
   const sel = (v, opts) => opts.map(([val, txt]) => `<option value="${val}" ${v === val ? 'selected' : ''}>${esc(txt)}</option>`).join('');
   $('groupsWrap').innerHTML = q.groups.map((g, gi) => `
-    <div class="li grp">
+    <div class="li wgrp">
       <div class="gh"><b>Window group ${gi + 1}</b>${q.groups.length > 1 ? `<button class="btn x" type="button" data-delg="${gi}" aria-label="Remove window group ${gi + 1}">✕</button>` : ''}</div>
       <div class="row">
         ${prod ? '' : `<label class="f">Product family<select data-g="${gi}" data-f="family">${sel(g.family, pricing.families.map(f => [f.id, f.name]))}</select></label>`}
@@ -700,6 +780,9 @@ function renderPricing() {
 function renderBoxes() {
   ensureBoxes();
   document.querySelectorAll('[data-mode]').forEach(r => { r.checked = r.value === q.boxMode; });
+  const isProd = q.boxMode === 'products';
+  $('countRow').hidden = isProd; $('boxTableWrap').hidden = isProd; $('prodWrap').hidden = !isProd;
+  if (isProd) { renderProdRows(); return; }
   $('countSeg').innerHTML = [1, 2, 3, 4].map(n => `<button type="button" class="${n === q.boxCount ? 'on' : ''}" data-count="${n}" aria-pressed="${n === q.boxCount}">${n}</button>`).join('');
   const prod = q.boxMode === 'products', rows = boxRows();
   const opts = (fid, cur) => famById(fid).ranges.map(r => `<option ${r.name === cur ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
@@ -714,18 +797,41 @@ function renderBoxes() {
            <td><select data-box="${r.i}" data-bf="range" aria-label="Box ${r.i + 1} range">${opts(b.family, b.range)}</select></td>`
         : q.groups.map((g, gi) => `<td><select data-box="${r.i}" data-col="${gi}" aria-label="Box ${r.i + 1} ${esc(famById(g.family).name)} range">${opts(g.family, b.sel[gi])}</select></td>`).join('');
       return `<tr><td>Box ${r.i + 1}</td>${cells}
-        <td class="n total" data-boxprice="${r.i}">${money(r.calc)}</td>
+        <td class="n total" data-boxprice="${r.key}">${money(r.calc)}</td>
         <td class="n"><input type="number" step="1" data-bov="${r.i}" value="${esc(r.ov ?? '')}" placeholder="—" aria-label="Override box ${r.i + 1} price"></td>
         <td class="c"><input type="radio" name="featBox" value="${r.i}" data-feat ${q.featuredBox === r.i ? 'checked' : ''} aria-label="Highlight box ${r.i + 1}" style="width:auto"></td></tr>`;
     }).join('') +
     `<tr><td colspan="${cols}"><label class="check"><input type="radio" name="featBox" value="-1" data-feat ${q.featuredBox === -1 ? 'checked' : ''} style="width:auto"> No highlighted box</label></td></tr>`;
+}
+function renderProdRows() {
+  const rows = boxRows();
+  const opts = (fid, cur) => famById(fid).ranges.map(r => `<option ${r.name === cur ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
+  const used = q.prodRows.map(r => r.family);
+  $('prodWrap').innerHTML = q.prodRows.map((pr, ri) => `
+    <div class="li wgrp">
+      <div class="gh"><b>Product ${ri + 1}</b>${q.prodRows.length > 1 ? `<button class="btn x" type="button" data-delp="${ri}" aria-label="Remove product ${ri + 1}">✕</button>` : ''}</div>
+      <div class="pr-top">
+        <label class="f">Product<select data-prow="${ri}" data-pf="family">${pricing.families.map(f => `<option value="${f.id}" ${f.id === pr.family ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></label>
+        <div class="f" style="display:grid;gap:3px;font-size:11.5px;color:var(--muted);font-weight:600">Boxes<span class="seg">${[1, 2, 3, 4].slice(0, Math.max(1, Math.min(4, famById(pr.family).ranges.length))).map(n => `<button type="button" class="${n === pr.count ? 'on' : ''}" data-pcount="${n}" data-prow="${ri}" aria-pressed="${n === pr.count}">${n}</button>`).join('')}</span></div>
+      </div>
+      <table class="calc" id="boxTable-${ri}">
+        <tr><th></th><th>Range</th><th style="text-align:right">Price</th><th style="text-align:right">Override</th><th class="c" title="Highlighted box">★</th></tr>
+        ${rows.filter(r => r.row === ri).map(r => `<tr><td>Box ${r.i + 1}</td>
+          <td><select data-prow="${ri}" data-pi="${r.i}" aria-label="Row ${ri + 1} box ${r.i + 1} range">${opts(pr.family, pr.sel[r.i])}</select></td>
+          <td class="n total" data-boxprice="${r.key}">${money(r.calc)}</td>
+          <td class="n"><input type="number" step="1" data-bov="${r.key}" value="${esc(r.ov ?? '')}" placeholder="—" aria-label="Override price"></td>
+          <td class="c"><input type="radio" name="featBox" value="${r.key}" data-feat ${r.featured ? 'checked' : ''} aria-label="Highlight this box" style="width:auto"></td></tr>`).join('')}
+      </table>
+    </div>`).join('') +
+    (q.prodRows.length < pricing.families.length ? `<button class="btn sm" type="button" data-addp style="justify-self:start">+ Add product (e.g. hardwood or alu-clad)</button>` : '') +
+    `<label class="check"><input type="radio" name="featBox" value="" data-feat ${!q.featuredKey ? 'checked' : ''} style="width:auto"> No highlighted box</label>`;
 }
 function updateNumbers() {
   $('areaOut').textContent = area().toFixed(2) + ' m²';
   q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : ''); });
   q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.textContent = replLine(r) + ' · adds ' + eur(replCost(r), 2) + ' to every box'; });
   q.items.forEach((it, i) => { const el = document.querySelector(`[data-itemcalc="${i}"]`); if (el) el.textContent = 'Adds ' + eur(itemCost(it), 2) + ' to every box'; });
-  boxRows().forEach(r => { const el = document.querySelector(`[data-boxprice="${r.i}"]`); if (el) el.textContent = money(r.calc); });
+  boxRows().forEach(r => { const el = document.querySelector(`[data-boxprice="${r.key}"]`); if (el) el.textContent = money(r.calc); });
 }
 
 // ---------- document rendering ----------
@@ -736,16 +842,32 @@ function scopeLines() {
   q.items.forEach(it => it.desc && lines.push([it.desc, '× ' + (num(it.qty) || 1)]));
   return lines;
 }
+let pricesOnP2 = false; // set by renderDoc when the prices don't fit on page 1
 function docHTML() {
   const rows = boxRows();
   const vatMul = 1 + num(q.vat) / 100;
   const validUntil = q.date ? fmtDate(addDays(q.date, num(q.validDays))) : '';
-  const cards = rows.map(r => `
-    <div class="card ${q.featuredBox === r.i ? 'feat' : ''}">
-      ${r.cap ? `<div class="name">${esc(r.cap)}</div>` : ''}<div class="range">${esc(r.label)}</div>
+  const isProd = q.boxMode === 'products';
+  const oneLine = isProd && (q.prodRows.length === 1 || q.prodRows.every(r => r.count === 1));
+  const cardHTML = r => `
+    <div class="card ${r.featured ? 'feat f-' + (r.family || 'mixed') : ''}">
+      ${r.cap && (!isProd || oneLine) ? `<div class="name">${esc(r.cap)}</div>` : ''}<div class="range">${esc(r.label)}</div>
       <div class="price">${money(r.final)}</div><div class="vat">excl. VAT</div>
       ${q.showIncVat ? `<div class="inc">${money(Math.round(r.final * vatMul))} incl. VAT</div>` : ''}
-    </div>`).join('');
+    </div>`;
+  const maxCols = isProd ? Math.max(1, ...q.prodRows.map(r => r.count)) : 1;
+  const grid = (list, compact) => compact
+    ? `<div class="ranges compact" style="grid-template-columns:repeat(${maxCols},1fr)">${list.map(cardHTML).join('')}</div>`
+    : `<div class="ranges ${list.length >= 4 ? 'c4' : ''} n${list.length}" style="grid-template-columns:repeat(${Math.max(list.length, 1)},1fr)">${list.map(cardHTML).join('')}</div>`;
+  const priceBlock = (!isProd || oneLine) ? grid(rows, false)
+    : `<div class="prows">${q.prodRows.map((pr, ri) => {
+        const list = rows.filter(r => r.row === ri);
+        const glz = q.groups.every(g => g.glazing === 'triple') ? 'Triple glazed' : 'Double glazed';
+        return `<div class="prow"><div class="plabel">${esc(famById(pr.family).name)}<span>${glz}</span></div>${grid(list, true)}</div>`;
+      }).join('')}</div>`;
+  const priceSection = `<h2>Your price — ${esc(priceHeading())}</h2>
+    ${priceBlock}
+    <p class="sub">All prices are for supply and fit, and exclude VAT at ${num(q.vat)}%.</p>`;
   const ups = [];
   if (q.tripleOption && !q.groups.every(g => g.glazing === 'triple')) ups.push(['Upgrade the whole house to triple glazing', '+' + pricing.triplePct + '%']);
   q.upgrades.forEach(u => u.desc && ups.push([u.desc, '+' + money(num(u.amount))]));
@@ -755,7 +877,13 @@ function docHTML() {
     <header><img src="${LOGO}" alt="Sean Doyle Windows Ltd">
       <div class="addr"><b>Roscommon</b> · Circular Road, Roscommon, Co. Roscommon F42 DY02<br><b>Dublin</b> · Whitestown Business Park, Whitestown Ind. Est., Tallaght, D24</div></header>
     <div class="meta">
-      <div class="title ${q.client ? '' : 'empty'}"><small>Quotation${q.title ? ' · ' + esc(q.title) : ''}</small>${esc(q.client || 'Customer name')}${q.clientAddress ? `<span class="caddr">${esc(q.clientAddress.trim())}</span>` : ''}</div>
+      <div class="title">
+        <span class="qtag">Quotation</span>
+        ${q.title ? `<div class="qhead">${esc(q.title)}</div>` : '<div style="height:3mm"></div>'}
+        <div class="cname ${q.client ? '' : 'empty'}">${esc(q.client || 'Customer name')}</div>
+        ${q.clientAddress && q.clientAddress.trim() ? `<span class="caddr">${esc(q.clientAddress.trim())}</span>` : ''}
+        ${q.jobRef && q.jobRef.trim() ? `<div class="jref"><b>Job Reference:</b> ${esc(q.jobRef.trim())}</div>` : ''}
+      </div>
       <div class="facts">
         <span>Reference</span><b>${esc(q.ref)}</b>
         <span>Date</span><b>${fmtDate(q.date)}</b>
@@ -770,13 +898,12 @@ function docHTML() {
     </div>
     <h2>Scope of works</h2>
     <ul class="scope">${scopeLines().map(([a, b]) => `<li><span>${esc(a)}</span><span class="q">${esc(b)}</span></li>`).join('')}</ul>
-    <h2>Your price — ${esc(priceHeading())}</h2>
-    <div class="ranges ${rows.length >= 4 ? 'c4' : ''} n${rows.length}" style="grid-template-columns:repeat(${Math.max(rows.length,1)},1fr)">${cards}</div>
-    <p class="sub">All prices are for supply and fit, and exclude VAT at ${num(q.vat)}%.</p>
+    ${pricesOnP2 ? '' : priceSection}
   </div><footer><span><b>Sean Doyle Windows Ltd</b> · Windows &amp; Doors</span><span>Ref ${esc(q.ref)} · Page 1 of 2</span></footer></section>`;
 
   const p2 = `
   <section class="page" id="p2"><div class="top"></div><div class="inner" style="padding-top:16mm">
+    ${pricesOnP2 ? `<div class="price-p2">${priceSection}</div>` : ''}
     ${ups.length ? `<h2>Optional upgrades</h2><table><tr><th>Option</th><th class="amt">Additional cost</th></tr>
       ${ups.map(([a, b]) => `<tr><td>${esc(a)}</td><td class="amt">${esc(b)}</td></tr>`).join('')}</table>` : ''}
     <h2>Please note</h2>
@@ -848,8 +975,12 @@ $('form').addEventListener('input', e => {
     else if (ds.bf === 'range') b.range = el.value;
   } else if (ds.bov !== undefined) {
     if (el.value === '') delete q.boxOverrides[ds.bov]; else q.boxOverrides[ds.bov] = el.value;
+  } else if (ds.prow !== undefined && (ds.pf || ds.pi !== undefined)) {
+    const pr = q.prodRows[+ds.prow];
+    if (ds.pf === 'family') { const d = prodRowDefault(el.value, pr.count); pr.family = d.family; pr.sel = d.sel; pr.count = d.count; ensureBoxes(); renderBoxes(); }
+    else pr.sel[+ds.pi] = el.value;
   } else if ('feat' in ds) {
-    q.featuredBox = +el.value;
+    if (q.boxMode === 'products') q.featuredKey = el.value; else q.featuredBox = +el.value;
   } else if ('mode' in ds) {
     q.boxMode = el.value; q.boxes = []; q.boxOverrides = {};
     q.groups.forEach(g => {
@@ -857,8 +988,7 @@ $('form').addEventListener('input', e => {
       if (q.boxMode === 'products' && (!g.label || defLabels.includes(g.label))) g.label = 'Windows';
       if (q.boxMode === 'ranges' && g.label === 'Windows') g.label = famById(g.family).label;
     });
-    q.featuredBox = q.boxMode === 'products' ? 0 : 1;
-    if (q.boxMode === 'products' && q.boxCount > 2) q.boxCount = 2;
+    q.featuredBox = 1; q.prodRows = null; q.featuredKey = undefined;
     if (q.boxMode === 'ranges' && q.boxCount < 3) q.boxCount = 3;
     ensureBoxes(); renderGroups(); renderBoxes();
   } else if (ds.list) {
@@ -889,6 +1019,17 @@ $('form').addEventListener('click', e => {
     renderGroups();
   } else if (ds.addo !== undefined) { q.groups[+ds.addo].openings.push({label:'', w:'', h:'', qty:1}); renderGroups(); }
   else if (ds.count !== undefined) { q.boxCount = +ds.count; ensureBoxes(); renderBoxes(); }
+  else if (ds.pcount !== undefined) {
+    const pr = q.prodRows[+ds.prow], n = +ds.pcount;
+    if ((pr.count === 1) !== (n === 1)) pr.sel = prodSel(famById(pr.family), n);
+    pr.count = n; ensureBoxes(); renderBoxes();
+  }
+  else if (ds.delp !== undefined) { q.prodRows.splice(+ds.delp, 1); q.boxOverrides = {}; q.featuredKey = undefined; ensureBoxes(); renderBoxes(); }
+  else if ('addp' in ds) {
+    const used = q.prodRows.map(r => r.family);
+    const next = ['upvc', 'alu', 'hardwood', 'aluclad'].find(id => !used.includes(id) && pricing.families.some(f => f.id === id)) || (pricing.families.find(f => !used.includes(f.id)) || pricing.families[0]).id;
+    q.prodRows.push(prodRowDefault(next, q.prodRows.every(r => r.count === 1) ? 1 : 3)); ensureBoxes(); renderBoxes();
+  }
   else return;
   refresh();
 });
@@ -951,9 +1092,16 @@ function priceSpan(d) {
 }
 
 // ---------- editor refresh (overrides builder versions) ----------
+function p1Overflows() {
+  const page = $('p1'); if (!page) return false;
+  const inner = page.querySelector('.inner'), foot = page.querySelector('footer');
+  return inner.getBoundingClientRect().bottom > foot.getBoundingClientRect().top + 1;
+}
 function renderDoc() {
+  pricesOnP2 = false;
   $('pages').innerHTML = docHTML();
   fitPreview();
+  if (p1Overflows()) { pricesOnP2 = true; $('pages').innerHTML = docHTML(); fitPreview(); }
   checkOverflow();
 }
 function refresh(touch = true) {
@@ -1006,7 +1154,7 @@ function renderList() {
     if (filter === 'new' ? !r.unseen : filter !== 'all' && statusOf(r) !== filter) return false;
     if (!term) return true;
     const d = r.data;
-    return [d.ref, d.client, d.clientAddress, d.clientEmail, d.clientPhone, d.title].join(' ').toLowerCase().includes(term);
+    return [d.ref, d.client, d.jobRef, d.clientAddress, d.clientEmail, d.clientPhone, d.title].join(' ').toLowerCase().includes(term);
   }).sort((a, b) => (b.unseen ? 1 : 0) - (a.unseen ? 1 : 0) || (b.updated || 0) - (a.updated || 0));
 
   $('emptyState').hidden = recs.length > 0;
