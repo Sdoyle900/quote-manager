@@ -575,10 +575,10 @@ table.ql tr.newreply td:first-child { box-shadow:inset 4px 0 0 var(--gold); }
     </div></details>
 
     <details class="sec"><summary>9. Price list (€ per m²)</summary><div class="body">
-      <p class="hint">From your 2026 square metre pricing sheet. Changes are saved in this browser and used for every quote.</p>
+      <p class="hint">Example prices for practice only. The real price list loads in the main quote manager after sign-in.</p>
       <div id="pricingWrap"></div>
       <label class="f" style="max-width:200px">Triple glazing uplift (%)<input id="triplePct" type="number" step="0.5"></label>
-      <button class="btn sm" id="resetPricing" type="button" style="justify-self:start">Reset to 2026 price list</button>
+      <button class="btn sm" id="resetPricing" type="button" style="justify-self:start">Reset example prices</button>
     </div></details>
 
     <div id="warn" class="warn" hidden></div>
@@ -662,10 +662,10 @@ const QR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAS8AAAFoCAMAAAAxXY0+AA
 const DEFAULT_PRICING = {
   triplePct: 12,
   families: [
-    { id:'upvc', name:'uPVC', label:'uPVC casement windows', ranges:[{name:'Future Proof',rate:190},{name:'Greenline',rate:260},{name:'Odyssey',rate:290}] },
-    { id:'alu', name:'Aluminium', label:'Aluminium windows', ranges:[{name:'Alu-P',rate:300},{name:'Vision',rate:420},{name:'Enhanced',rate:470},{name:'Affinity',rate:440}] },
-    { id:'aluclad', name:'Alu-Clad', label:'Alu-clad windows', ranges:[{name:'Imported',rate:425},{name:'Irish Made',rate:450}] },
-    { id:'hardwood', name:'Hardwood', label:'Hardwood casement windows', ranges:[{name:'Heritage',rate:500},{name:'Herculese',rate:550}] }
+    { id:'upvc', name:'uPVC', label:'uPVC casement windows', ranges:[{name:'Future Proof',rate:210},{name:'Greenline',rate:280},{name:'Odyssey',rate:320}] },
+    { id:'alu', name:'Aluminium', label:'Aluminium windows', ranges:[{name:'Alu-P',rate:330},{name:'Vision',rate:450},{name:'Enhanced',rate:500},{name:'Affinity',rate:470}] },
+    { id:'aluclad', name:'Alu-Clad', label:'Alu-clad windows', ranges:[{name:'Imported',rate:460},{name:'Irish Made',rate:490}] },
+    { id:'hardwood', name:'Hardwood', label:'Hardwood casement windows', ranges:[{name:'Heritage',rate:540},{name:'Herculese',rate:590}] }
   ]
 };
 
@@ -1378,7 +1378,7 @@ $('addGroup').onclick = () => {
 $('addRepl').onclick = () => { q.replacements.push({type:'windows', qty:1, price:'', per:'each'}); renderReplacements(); refresh(); };
 $('addItem').onclick = () => { q.items.push({desc:ITEM_OPTS[0], qty:1, mode:'fixed', price:'', w:'', h:'', rate:'alu:0'}); renderItems(); refresh(); };
 $('addUp').onclick = () => { q.upgrades.push({desc:'', amount:''}); renderUpgrades(); refresh(); };
-$('resetPricing').onclick = () => { if (!confirm('Reset all m² rates to the 2026 price list?')) return; pricing = JSON.parse(JSON.stringify(DEFAULT_PRICING)); store.set('sdw-demo-pricing', pricing); fullRender(); toast('Price list reset'); };
+$('resetPricing').onclick = () => { if (!confirm('Reset the example prices?')) return; pricing = JSON.parse(JSON.stringify(DEFAULT_PRICING)); store.set('sdw-demo-pricing', pricing); fullRender(); toast('Price list reset'); };
 
 // =====================================================================
 // Quote Manager: storage, list, Outlook sending and reply tracking
