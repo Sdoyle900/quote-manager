@@ -726,7 +726,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 13 Nov 2026 · access check (Sean only)</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 13 Nov 2026 · office sets Sean's rates</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2500,11 +2500,12 @@ async function loadCloudPricing() {
       const base = lists.dublin || lists.roscommon || (listOK(old) ? old : null) || { triplePct:pricing.triplePct, families:pricing.families };
       Object.keys(REGIONS).forEach(k => { if (!lists[k]) { lists[k] = JSON.parse(JSON.stringify(base)); priceDirty = true; } });
       const map = (await safeRead(REGION_MAP)) || {};
-      priceBook = { lists, regions:map.regions || {} };
+      priceBook = { lists, regions:map.regions || {}, names:map.names || {} };
       alignItems();
       myRegion = priceBook.regions[cloud.me] || 'dublin';
       editRegion = editRegion || myRegion;
       useList(priceBook.lists[myRegion]);
+      if (myName && priceBook.names[cloud.me] !== myName && !priceDirty) saveRegionMap().catch(() => {});
       cloud.priceState = (Object.keys(REGIONS).every(k => listOK(lists[k])) && !priceDirty) ? 'ok' : 'setup';
     } else {
       // a rep can open exactly one of the price list folders (the office decides which)
@@ -2537,7 +2538,13 @@ async function savePricingToCloud() {
   } catch (e) { toast('Not saved: ' + e.message); }
   btn.disabled = false; btn.textContent = 'Save price list to SharePoint'; priceUI();
 }
-const saveRegionMap = () => putPath(REGION_MAP, { app:'sdw-quote-manager', kind:'rep-rates', saved:new Date().toISOString(), regions:priceBook.regions });
+function saveRegionMap() {
+  const names = Object.assign({}, priceBook.names || {});
+  cloud.folders.forEach(f => { const i = repInfo(f.name); if (repNames[i.email] || f === cloud.mine) names[i.email] = i.name; });
+  if (myName) names[cloud.me] = myName;
+  priceBook.names = names;
+  return putPath(REGION_MAP, { app:'sdw-quote-manager', kind:'rep-rates', saved:new Date().toISOString(), regions:priceBook.regions, names });
+}
 // Give a rep read access to their region's price list folder, and take it away from the other one.
 async function setRepRegion(email, region) {
   email = email.toLowerCase();
@@ -2545,7 +2552,7 @@ async function setRepRegion(email, region) {
   for (const k of Object.keys(REGIONS)) {
     const item = await graph(`/drives/${cloud.driveId}/root:/${REGIONS[k].folder.split('/').map(encodeURIComponent).join('/')}`, {}, false);
     if (k === region) {
-      if (email !== cloud.me) await graph(`/drives/${cloud.driveId}/items/${item.id}/invite`, { method:'POST', body:{ requireSignIn:true, sendInvitation:false, roles:['read'], recipients:[{ email }] } }, false);
+      if (email !== cloud.me && !ACCESS_CHECKERS.includes(email)) await graph(`/drives/${cloud.driveId}/items/${item.id}/invite`, { method:'POST', body:{ requireSignIn:true, sendInvitation:false, roles:['read'], recipients:[{ email }] } }, false);
     } else {
       const perms = (await graph(`/drives/${cloud.driveId}/items/${item.id}/permissions`, {}, false)).value || [];
       for (const pm of perms) {
@@ -2627,7 +2634,8 @@ const repNames = {};   // folder (email) -> the person's Microsoft name, taken f
 function repInfo(folderName) {
   const email = folderName.toLowerCase();
   const known = (cloud.mine && folderName === cloud.mine.name) ? (myName || (account && account.name)) : repNames[email];
-  if (known) { const name = String(known).trim(); return { name, first:name.split(/\s+/)[0], email }; }
+  const named = known || (typeof priceBook !== 'undefined' && priceBook && priceBook.names && priceBook.names[email]);
+  if (named) { const name = String(named).trim(); return { name, first:name.split(/\s+/)[0], email }; }
   const list = folderName === cloud.mine?.name && !viewRep ? recs : (repCache[folderName] || {}).recs || [];
   const counts = {};
   list.forEach(r => { const n = (r.data.signName || '').trim(); if (n) counts[n] = (counts[n] || 0) + 1; });
@@ -2784,7 +2792,10 @@ function ratesState() {
   $('ratesState').textContent = dirty ? 'Changes not saved yet. Reps keep the old rates until you click Save rates.' : 'Saved. Reps get these rates next time they open the quote manager.';
 }
 function renderRatesWho() {
-  const people = cloud.folders.map(f => repInfo(f.name)).sort((a, b) => a.name.localeCompare(b.name));
+  const emails = new Set(cloud.folders.map(f => f.name.toLowerCase()));
+  Object.keys(priceBook.regions || {}).forEach(e => emails.add(e));
+  ACCESS_CHECKERS.forEach(e => emails.add(e));
+  const people = [...emails].map(e => repInfo(e)).sort((a, b) => a.name.localeCompare(b.name));
   $('ratesWho').innerHTML = people.map(pp => { const reg = priceBook.regions[pp.email]; return `<div class="who-row"><span><b>${esc(pp.name)}</b>${pp.email === cloud.me ? ' <span class="rc-you" style="color:var(--accent);font-size:10.5px;font-weight:700">YOU</span>' : ''}<small>${esc(pp.email)}</small></span>
     <span class="rc-region"><select data-region-for="${esc(pp.email)}" class="${reg ? '' : 'unset'}" aria-label="Rates for ${esc(pp.name)}">${reg ? '' : '<option value="" selected>Not set</option>'}${Object.entries(REGIONS).map(([k, v]) => `<option value="${k}" ${reg === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></span></div>`; }).join('') || '<p class="hint">No rep folders yet.</p>';
 }
