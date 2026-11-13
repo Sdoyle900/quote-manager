@@ -872,6 +872,9 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e) { return false; } }
 };
+// practice.html is built from this same file with PRACTICE = true: it behaves exactly like a rep's screen, but with example prices and no sign-in or sending.
+const PRACTICE = false;
+/*PRACTICE_EXTRAS*/
 let pricing = store.get('sdw-pricing', null) || JSON.parse(JSON.stringify(DEFAULT_PRICING));
 let q = null;
 // ---------- helpers ----------
@@ -1162,7 +1165,7 @@ const itemOf = it => { const c = catOf(it); return c && (c.items || []).find(x =
 const priceArr = x => Array.isArray(x.prices) ? x.prices : (x.prices && typeof x.prices === 'object' ? (x.prices[(typeof myRegion !== 'undefined' && myRegion) || 'dublin'] || []) : []);
 const isPriced = x => [0, 1, 2].every(t => num(priceArr(x)[t]) > 0);
 // what a person can pick: reps only see items the office has fully priced
-const availItems = c => (c.items || []).filter(x => !isRepUser() || isPriced(x));
+const availItems = c => (c.items || []).filter(x => PRACTICE || !isRepUser() || isPriced(x));
 function tierCols(c) {
   if (c.family) { const f = rates().families.find(x => x.id === c.family) || famById(c.family); const r = f.ranges.map(x => x.name); return [r[0] || 'Tier 1', r[1] || 'Tier 2', r.slice(2).join(' / ') || 'Tier 3'].map(n => [n, '']); }
   return [['Tier 1', 'Future Proof · Alu-P · Imported · Heritage'], ['Tier 2', 'Greenline · Vision · Irish Made · Herculese'], ['Tier 3', 'Odyssey · Enhanced · Affinity']];
@@ -1196,7 +1199,7 @@ function catPrice(it) {
 let asRep = false;   // office previewing the rep screen
 // Only these people get the "Check what each rep can open" button
 const ACCESS_CHECKERS = ['seand@sdwindows.ie'];
-const isRepUser = () => typeof cloud !== 'undefined' && cloud.state !== 'off' && cloud.state !== 'noaccess' && (!cloud.office || asRep);
+const isRepUser = () => PRACTICE || typeof cloud !== 'undefined' && cloud.state !== 'off' && cloud.state !== 'noaccess' && (!cloud.office || asRep);
 function renderItems() {
   // a description typed before the list existed, e.g. "french door", snaps to the listed wording
   q.items.forEach(it => {
@@ -1255,7 +1258,7 @@ function catItemHTML(it, i) {
     </div>
     ${c ? `<label class="f">Item<select data-list="items" data-i="${i}" data-f="itemId">
         <option value="" ${!it.itemId ? 'selected' : ''}>Choose…</option>
-        ${availItems(c).map(y => `<option value="${esc(y.id)}" ${y.id === it.itemId ? 'selected' : ''}>${esc(y.name)}${c.perM2 ? ' (priced per m²)' : ''}${!isRepUser() && !isPriced(y) ? ' · no price yet' : ''}</option>`).join('')}
+        ${availItems(c).map(y => `<option value="${esc(y.id)}" ${y.id === it.itemId ? 'selected' : ''} ${PRACTICE && !isPriced(y) ? 'disabled' : ''}>${esc(y.name)}${c.perM2 ? ' (priced per m²)' : ''}${!isPriced(y) ? (PRACTICE ? ' – not set by office' : !isRepUser() ? ' · no price yet' : '') : ''}</option>`).join('')}
         ${c.repPrice ? `<option value="__rep" ${it.itemId === '__rep' ? 'selected' : ''}>Rep price (type your own price)…</option>` : ''}</select></label>` : ''}
     ${own ? `<label class="f">Description on the quote<span class="micwrap"><input data-list="items" data-i="${i}" data-f="desc" value="${esc(it.desc || '')}" placeholder="${it.cat === 'custom' ? 'e.g. Bi-fold door, 3 panel, anthracite grey' : esc(c ? c.name : '')}">${MIC}</span></label>` : ''}
     ${it.cat && (own || x) ? `<div class="row">
@@ -1318,7 +1321,7 @@ function renderPricing() {
 function priceUI() {
   const signedIn = typeof cloud !== 'undefined' && cloud.state !== 'off' && cloud.state !== 'noaccess';
   const office = signedIn && cloud.office && !asRep;
-  $('priceSec').hidden = signedIn;
+  $('priceSec').hidden = signedIn || PRACTICE;
   const canEdit = !signedIn || (office && !viewRep);
   document.querySelectorAll('#pricingWrap input, #triplePct').forEach(el => { el.disabled = !canEdit; });
   $('regionTabs').hidden = !(office && priceBook);
@@ -2380,6 +2383,7 @@ let msalApp = null, account = null, myAddrs = [];
 const redirectUri = () => location.origin + location.pathname.replace(/index\.html$/, '');
 async function initMsal() {
   msalApp = null; account = null;
+  if (PRACTICE) { $('acctBtn').hidden = true; renderMe(); return; }
   if (settings.clientId && window.msal && location.protocol.startsWith('http')) {
     try {
       msalApp = new msal.PublicClientApplication({
@@ -3539,6 +3543,7 @@ $('sendForm').onsubmit = async e => {
   const bad = [...to, ...cc].find(a => !validEmail(a));
   if (bad) return showErr(`“${bad}” is not a valid email address.`);
   if (!$('sendSubject').value.trim()) return showErr('Add a subject.');
+  if (PRACTICE) return showErr('This is the practice version, so emails can’t be sent. Use the real quote manager to send quotes.');
   if (!account && !(await signIn())) return showErr('Connect Outlook to send.');
   const bros = chosenBrochures();
   cur.broTicked = bros.map(b => b.file);
