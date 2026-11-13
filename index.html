@@ -726,7 +726,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 13 Nov 2026 · office sets Sean's rates</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 13 Nov 2026 · email signature</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -744,6 +744,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
     <label class="f">Email message<span class="micwrap"><textarea id="setBody" style="min-height:160px"></textarea><button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button></span></label>
     <label class="f">Follow-up email message (used unless a customer has their own)<span class="micwrap"><textarea id="setFuMsg" style="min-height:120px"></textarea><button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button></span></label>
     <div class="evt"><b>Example quotes</b> · <button class="btn sm" type="button" id="demoAdd">Show example quotes</button> <button class="btn sm" type="button" id="demoRm2">Remove example quotes</button></div>
+    <label class="chk" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="setHtmlSig"> Add the Sean Doyle Windows signature (name, mobile, website, both showrooms with directions) to every email. It replaces the “Kind regards…” lines at the end of the message.</label>
     <p class="hint">You can use {first}, {name}, {ref}, {sender} and {mobile} in the subject and message. Outlook does not add your signature to emails sent from here, so include your sign-off in the message.</p>
     <div class="acts">
       <button class="btn" type="button" id="setSignOut" hidden>Disconnect Outlook</button>
@@ -1651,7 +1652,7 @@ async function runFollowUps() {
       let draft = null;
       try {
         const subject = /^re:/i.test(last.subject || '') ? last.subject : 'Re: ' + (last.subject || displayRef(d));
-        draft = await graph('/me/messages', { method:'POST', body:{ subject, body:{ contentType:'HTML', content:textToHtml(fuText(fam, d)) }, toRecipients:to.map(a => ({ emailAddress:{ address:a } })) } }, false);
+        draft = await graph('/me/messages', { method:'POST', body:{ subject, body:{ contentType:'HTML', content:textToHtml(fuText(fam, d), d) }, toRecipients:to.map(a => ({ emailAddress:{ address:a } })) } }, false);
         await graph(`/me/messages/${encodeURIComponent(draft.id)}/send`, { method:'POST' }, false);
         entry.pending = false; entry.conversationId = draft.conversationId; entry.to = to.join('; '); entry.subject = subject;
         sentNow++;
@@ -2235,13 +2236,21 @@ async function getToken(interactive) {
     return (await msalApp.acquireTokenPopup({ scopes:SCOPES, account })).accessToken;
   }
 }
+const TEMP_ERR = [429, 502, 503, 504];
+const wait = ms => new Promise(r => setTimeout(r, ms));
 async function graph(path, opts = {}, interactive = true) {
   const token = await getToken(interactive);
-  const res = await fetch(/^https:/.test(path) ? path : 'https://graph.microsoft.com/v1.0' + path, {
-    method: opts.method || 'GET',
-    headers: { Authorization:'Bearer ' + token, 'Content-Type':'application/json' },
-    body: opts.body ? JSON.stringify(opts.body) : undefined
-  });
+  let res;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    res = await fetch(/^https:/.test(path) ? path : 'https://graph.microsoft.com/v1.0' + path, {
+      method: opts.method || 'GET',
+      headers: { Authorization:'Bearer ' + token, 'Content-Type':'application/json' },
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+    if (!TEMP_ERR.includes(res.status)) break;
+    const ra = num(res.headers.get('Retry-After'));
+    await wait(ra ? Math.min(ra, 30) * 1000 : 1500 * Math.pow(2, attempt));   // Microsoft hiccup: wait and try again
+  }
   if (!res.ok) {
     let msg = 'Outlook returned error ' + res.status;
     try { const j = await res.json(); if (j.error && j.error.message) msg = j.error.message; } catch (e) {}
@@ -2835,8 +2844,35 @@ $('ratesWho').addEventListener('change', async e => {
 const fill = (tpl, d) => String(tpl || '')
   .replace(/\{first\}/g, firstName(d)).replace(/\{name\}/g, d.client || '')
   .replace(/\{ref\}/g, displayRef(d)).replace(/\{sender\}/g, d.signName || '').replace(/\{mobile\}/g, d.signMobile || '');
-const textToHtml = t => '<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#22263a">' +
-  esc(t).split(/\n{2,}/).map(p => `<p style="margin:0 0 12px">${p.replace(/\n/g, '<br>')}</p>`).join('') + '</div>';
+// Email signature, matching the sign-off on the quote. Built with tables and inline styles so Outlook, Gmail and phones show it the same.
+function emailSig(d) {
+  const F = 'font-family:Inter,Segoe UI,Calibri,Arial,sans-serif;';
+  const card = (label, phone, ec) => phone ? `<td valign="top" style="padding:0 8px 0 0"><table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:separate;background:#f1f2f6;border-top:3px solid #c9a24a;border-radius:5px;width:172px"><tr><td style="padding:7px 10px;${F}">
+      <div style="font-size:7pt;font-weight:700;letter-spacing:.8px;color:#6b7085;text-transform:uppercase;white-space:nowrap">${label}</div>
+      <div style="font-size:10pt;font-weight:700;color:#0e1238;padding:2px 0 3px">${esc(phone)}</div>
+      <div style="font-size:8pt;color:#22263a;white-space:nowrap"><span style="color:#1f6f5c">&#9679;</span>&nbsp;${ec}&nbsp;&nbsp;<a href="https://www.google.com/maps/dir/?api=1&amp;destination=${encodeURIComponent(ec + ', Ireland')}" style="color:#1f6f5c;font-weight:700;text-decoration:none">Directions &rarr;</a></div>
+    </td></tr></table></td>` : '';
+  const dub = card('Dublin showroom', d.signDublin, 'D24 YX79'), ros = card('Roscommon showroom', d.signRoscommon, 'F42 DY02');
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:6px;${F}color:#22263a"><tr><td style="${F}">
+    <div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#22263a">Kind regards,</div>
+    <div style="font-size:11.5pt;font-weight:800;color:#0e1238;padding-top:6px">${esc(d.signName || '')}</div>
+    <div style="font-size:9pt;color:#6b7085;padding-bottom:8px">Sean Doyle Windows Ltd</div>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="padding-bottom:8px"><tr>
+      ${d.signMobile ? `<td style="${F}font-size:7.5pt;font-weight:700;letter-spacing:.8px;color:#6b7085;padding-right:10px">MOBILE</td><td style="${F}font-size:9.5pt;font-weight:700;color:#0e1238;padding-right:16px">${esc(d.signMobile)}</td>` : ''}
+      <td style="${F}font-size:9.5pt;font-weight:700"><a href="http://www.seandoylewindows.ie/" style="color:#1f6f5c;text-decoration:none">www.seandoylewindows.ie</a></td>
+    </tr></table>
+    <table role="presentation" cellpadding="0" cellspacing="0"><tr>${d.showroomFirst === 'roscommon' ? ros + dub : dub + ros}</tr></table>
+  </td></tr></table>`;
+}
+// The signature replaces the typed sign-off ("Kind regards, …" and everything after it).
+const stripSignOff = t => String(t).replace(/\n\s*(kind regards|regards|many thanks|thanks)\s*,?[\s\S]*$/i, '').replace(/\s+$/, '');
+const textToHtml = (t, d) => {
+  const useSig = d && settings.htmlSig !== false;
+  const body = useSig ? stripSignOff(t) : t;
+  return '<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#22263a">' +
+    esc(body).split(/\n{2,}/).map(p => `<p style="margin:0 0 12px">${p.replace(/\n/g, '<br>')}</p>`).join('') +
+    (useSig ? emailSig(d) : '') + '</div>';
+};
 const splitAddrs = s => String(s || '').split(/[;,]/).map(x => x.trim()).filter(Boolean);
 const validEmail = s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 
@@ -2970,7 +3006,12 @@ async function addAttachment(msgId, name, bytes, onProgress, contentType) {
   const CHUNK = 320 * 1024 * 12;
   for (let start = 0; start < bytes.length; start += CHUNK) {
     const end = Math.min(start + CHUNK, bytes.length);
-    const res = await fetch(sess.uploadUrl, { method:'PUT', headers:{ 'Content-Type':'application/octet-stream', 'Content-Range':`bytes ${start}-${end - 1}/${bytes.length}` }, body:bytes.slice(start, end) });
+    let res;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      res = await fetch(sess.uploadUrl, { method:'PUT', headers:{ 'Content-Type':'application/octet-stream', 'Content-Range':`bytes ${start}-${end - 1}/${bytes.length}` }, body:bytes.slice(start, end) });
+      if (!TEMP_ERR.includes(res.status)) break;
+      await wait(1500 * Math.pow(2, attempt));
+    }
     if (!res.ok) throw new Error(`Outlook would not accept ${name} (error ${res.status}).`);
     if (onProgress) onProgress(end / bytes.length);
   }
@@ -3038,7 +3079,7 @@ $('sendForm').onsubmit = async e => {
       go.textContent = n > 1 ? `Email ${k + 1} of ${n}: creating…` : 'Creating email…';
       const msg = {
         subject: subject + part,
-        body: { contentType:'HTML', content:textToHtml(text) },
+        body: { contentType:'HTML', content:textToHtml(text, q) },
         toRecipients: to.map(a => ({ emailAddress:{ address:a } })),
         ccRecipients: cc.map(a => ({ emailAddress:{ address:a } }))
       };
@@ -3141,7 +3182,7 @@ window.addEventListener('focus', () => { if (account && Date.now() - (settings.l
 function openSettings(msg) {
   $('setMsg').hidden = !msg; $('setMsg').textContent = msg || '';
   $('setClientId').value = settings.clientId; $('setTenantId').value = settings.tenantId;
-  $('setInterval').value = settings.interval; $('setMaxMB').value = settings.maxMB; $('setFuMsg').value = settings.fuMsg; $('setSubject').value = settings.subject; $('setBody').value = settings.body;
+  $('setInterval').value = settings.interval; $('setMaxMB').value = settings.maxMB; $('setFuMsg').value = settings.fuMsg; $('setSubject').value = settings.subject; $('setBody').value = settings.body; $('setHtmlSig').checked = settings.htmlSig !== false;
   $('setRedirect').textContent = location.protocol.startsWith('http') ? redirectUri() : 'https://<your-github-name>.github.io/quote-manager/';
   $('setAcct').innerHTML = account ? `<b>Outlook connected:</b> ${esc(account.username)}` : '<b>Outlook not connected.</b> Save your app details, then click Connect Outlook.';
   $('setSignOut').hidden = !account;
@@ -3162,7 +3203,7 @@ $('settingsForm').onsubmit = async e => {
   settings.clientId = $('setClientId').value.trim(); settings.tenantId = $('setTenantId').value.trim();
   settings.interval = Math.max(1, num($('setInterval').value) || 5);
   settings.maxMB = Math.min(30, Math.max(3, num($('setMaxMB').value) || 15));
-  settings.subject = $('setSubject').value; settings.body = $('setBody').value; settings.fuMsg = $('setFuMsg').value || DEFAULT_SETTINGS.fuMsg;
+  settings.subject = $('setSubject').value; settings.body = $('setBody').value; settings.htmlSig = $('setHtmlSig').checked; settings.fuMsg = $('setFuMsg').value || DEFAULT_SETTINGS.fuMsg;
   saveSettings(); $('settingsModal').hidden = true; toast('Settings saved');
   if (idChanged) await initMsal(); else if (account) startPolling();
 };
