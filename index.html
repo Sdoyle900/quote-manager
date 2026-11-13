@@ -491,6 +491,20 @@ table.rates input.changed { border-color:var(--gold); background:#fff8e6; }
 .acc-ok { color:var(--accent); font-weight:700; } .acc-bad { color:var(--danger); font-weight:700; } .acc-warn { color:#8a6200; font-weight:700; }
 .acc-row ul { margin:4px 0 0; padding-left:18px; color:var(--ink); font-size:12.5px; }
 @media (max-width:600px) { .acc-row { grid-template-columns:1fr; } }
+.bpgrid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; }
+.offn { display:block; background:#eef6f2; border:1px solid #cfe5da; border-radius:6px; padding:6px 8px; font-size:11.5px; color:#1f4f43; font-weight:500; }
+.exchips { display:flex; gap:8px; flex-wrap:wrap; }
+.exchips button { font:inherit; font-size:12.5px; font-weight:600; border:1px solid var(--ui-line); background:#fff; color:var(--muted); border-radius:999px; padding:6px 12px; cursor:pointer; }
+.exchips button.on { background:var(--navy); color:#fff; border-color:var(--navy); }
+.exchips button small { opacity:.7; margin-left:4px; }
+table.rates td.dr { white-space:nowrap; text-align:center; }
+table.rates td.dr input { width:84px; }
+table.rates .dl { font-size:9.5px; font-weight:700; color:var(--muted); margin:0 3px 0 6px; }
+table.rates th.c { text-align:center; } table.rates th.c small { display:block; text-transform:none; letter-spacing:0; font-weight:500; }
+.exset { display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:12.5px; color:var(--muted); }
+.exset label { display:inline-flex; gap:6px; align-items:center; }
+.exset input[type=checkbox] { width:auto; margin:0; }
+.exset input[type=text], .exset select { font:inherit; border:1px solid var(--ui-line); border-radius:6px; padding:5px 8px; width:auto; }
 .viewbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#fff6dc; border:1px solid var(--gold); border-left:4px solid var(--gold); border-radius:7px; padding:9px 12px; margin-bottom:12px; }
 .viewbar b { color:var(--navy); }
 body.viewonly #newBtn, body.viewonly #exportBtn, body.viewonly #importBtn, body.viewonly #revBtn, body.viewonly #dupBtn,
@@ -560,9 +574,10 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 </main>
 
 <main id="ratesView" class="view-list" hidden>
-  <div class="reps-head"><h2>Rates</h2><p>€ per m² (excl. VAT). Each rep is priced from either the Dublin or the Roscommon rates. Reps never see this page.</p></div>
+  <div class="reps-head"><h2>Rates</h2><span class="seg" id="ratesSeg"><button type="button" data-rs="m2" class="on">m² rates</button><button type="button" data-rs="extras">Extra items</button></span><p>€ excl. VAT. Each rep is priced from either the Dublin or the Roscommon rates. Reps never see this page.</p></div>
   <div class="rates-card">
-    <div style="overflow-x:auto"><table class="rates" id="ratesTable"></table></div>
+    <div style="overflow-x:auto" id="ratesM2"><table class="rates" id="ratesTable"></table></div>
+    <div id="ratesEx" hidden style="display:grid;gap:12px"><div class="exchips" id="exChips"></div><div id="exBody"></div></div>
     <div class="rates-foot"><span id="ratesState"></span><button class="btn primary" id="ratesSave" type="button">Save rates</button></div>
   </div>
   <h3 class="rates-h3">Who uses which rates</h3>
@@ -727,7 +742,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 13 Nov 2026 · Mail.ReadWrite (2)</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 13 Nov 2026 · extra items</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -828,7 +843,7 @@ const fmtDate = iso => { if (!iso) return ''; const [y,m,d] = iso.split('-'); re
 const addDays = (iso, days) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + days); return d.toISOString().slice(0,10); };
 // A quote that has been emailed keeps the rates it was sent with (q.rates), so later price changes never alter it.
 const rates = () => (q && q.rates && Array.isArray(q.rates.families)) ? q.rates : pricing;
-const snapRates = () => JSON.parse(JSON.stringify({ triplePct:pricing.triplePct, families:pricing.families, items:pricing.items || [] }));
+const snapRates = () => JSON.parse(JSON.stringify({ triplePct:pricing.triplePct, families:pricing.families, items:pricing.items || [], extras:pricing.extras || [] }));
 function rateOf(key) { const [fid, i] = String(key).split(':'); const f = rates().families.find(x => x.id === fid); return f && f.ranges[+i] ? f.ranges[+i].rate : 0; }
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 1800); }
 
@@ -848,8 +863,17 @@ const uplift = g => g.glazing === 'triple' ? 1 + num(rates().triplePct) / 100 : 
 function rangeRate(fid, name) { const f = famById(fid); const r = f.ranges.find(x => x.name === name) || f.ranges[0]; return r ? r.rate : 0; }
 // In "different products" mode a fixed-price item can have its own price for each product (it.pp[family]).
 const itemFams = () => q.boxMode === 'products' ? [...new Set((q.prodRows || []).map(r => r.family))] : [];
-function itemCost(it, fam) {
+function itemCost(it, fam, ctx) {
   const qty = num(it.qty) || 0;
+  if (it.cat) {
+    if (it.cat === 'custom' || it.itemId === '__rep') {
+      const v = ctx && it.bp && it.bp[ctx.key] !== undefined && it.bp[ctx.key] !== '' ? num(it.bp[ctx.key]) : firstBp(it);
+      return v * qty * uplift(it);
+    }
+    const c = catOf(it), x = itemOf(it); if (!c || !x) return 0;
+    const each = num(priceArr(x)[tierFor(c, ctx)]) * (c.perM2 ? num(it.w) * num(it.h) : 1);
+    return each * qty * uplift(it);
+  }
   if (it.mode === 'sqm') return num(it.w) * num(it.h) * qty * rateOf(it.rate) * uplift(it);
   const cp = catPrice(it); if (cp !== null) return cp * qty * uplift(it);
   if (fam && it.pp && it.pp[fam] !== undefined && it.pp[fam] !== '') return num(it.pp[fam]) * qty * uplift(it);
@@ -860,7 +884,7 @@ function replLine(r) { const n = num(r.qty) || 0; const word = r.type === 'doors
 const isTT = g => /tilt\s*(and|&|\+|n)\s*turn/i.test(g.label || '');
 const groupFixed = g => g.areaMode === 'fixed' ? Math.max(0, num(g.fixedPrice)) * uplift(g) : 0;
 const ttExtra = g => isTT(g) ? Math.max(0, num(g.ttPrice)) * Math.max(0, num(g.ttQty)) : 0;
-function itemsTotal(fam) { return q.items.reduce((s, it) => s + itemCost(it, fam), 0) + (q.replacements || []).reduce((s, r) => s + replCost(r), 0) + Math.max(0, num(q.ctTax)) + q.groups.reduce((s, g) => s + ttExtra(g) + groupFixed(g), 0); }
+function itemsTotal(fam, ctx) { return q.items.reduce((s, it) => s + itemCost(it, fam, ctx), 0) + (q.replacements || []).reduce((s, r) => s + replCost(r), 0) + Math.max(0, num(q.ctTax)) + q.groups.reduce((s, g) => s + ttExtra(g) + groupFixed(g), 0); }
 function roundTo(n) { const r = num(q.rounding); return r > 0 ? Math.round(n / r) * r : Math.round(n * 100) / 100; }
 
 // Price boxes: up to 4. In "ranges" mode each box picks a range for every window group (paired, e.g. Future Proof / Alu-P).
@@ -944,22 +968,24 @@ function boxRows() {
   if (q.boxMode === 'products') {
     const out = [];
     q.prodRows.forEach((pr, ri) => {
-      const f = famById(pr.family), extra = itemsTotal(pr.family);
+      const f = famById(pr.family);
       for (let i = 0; i < pr.count; i++) {
         const key = `p${ri}:${i}`, range = pr.sel[i];
+        const ctx = { key, ranges:[{ family:pr.family, range }] }, extra = itemsTotal(pr.family, ctx);
         const windows = q.groups.reduce((s, g) => s + groupArea(g) * rangeRate(pr.family, range) * uplift(g), 0);
         const calc = roundTo(windows + extra);
         const ov = q.boxOverrides[key];
         const final = ov !== undefined && ov !== '' ? num(ov) : calc;
-        out.push({ i, key, row:ri, family:f.id, windows, calc, final, ov, label:range, cap:f.name, featured:pr.feat === i });
+        out.push({ i, key, row:ri, family:f.id, windows, calc, final, ov, label:range, cap:f.name, featured:pr.feat === i, ctx });
       }
     });
     return out;
   }
   ensureBoxes(q);
-  const extra = itemsTotal(), rows = [];
+  const rows = [];
   for (let i = 0; i < q.boxCount; i++) {
     const b = q.boxes[i];
+    const ctx = { key:String(i), ranges:q.groups.map((g, gi) => ({ family:g.family, range:b.sel ? b.sel[gi] : b.range })) }, extra = itemsTotal(undefined, ctx);
     let windows = 0, parts = [], fams = [];
     if (q.boxMode === 'products') {
       windows = q.groups.reduce((s, g) => s + groupArea(g) * rangeRate(b.family, b.range) * uplift(g), 0);
@@ -972,7 +998,7 @@ function boxRows() {
     const calc = roundTo(windows + extra);
     const ov = q.boxOverrides[i];
     const final = ov !== undefined && ov !== '' ? num(ov) : calc;
-    rows.push({ i, key:String(i), row:0, windows, calc, final, ov, label:uParts.join(' / '), cap: uFams.length === 1 ? uFams[0] : '', family: new Set(q.groups.map(g => g.family)).size === 1 ? q.groups[0].family : '', featured:q.featuredBox === i });
+    rows.push({ i, key:String(i), row:0, ctx, windows, calc, final, ov, label:uParts.join(' / '), cap: uFams.length === 1 ? uFams[0] : '', family: new Set(q.groups.map(g => g.family)).size === 1 ? q.groups[0].family : '', featured:q.featuredBox === i });
   }
   return rows;
 }
@@ -1073,6 +1099,51 @@ function renderGroups() {
     </div>`).join('');
 }
 const ITEM_OPTS = ['Lift and slide door', 'French door', 'Patio door', 'Single door', 'Composite front door', 'Lift and slide door (Alu-clad in Future Proof / Alu-P)'];
+// ---- Extra items set up by the office (Rates > Extra items) ----
+// Each category has up to three price columns ("tiers"). A price box uses the column that matches its range:
+// tier 1 Future Proof / Alu-P / Imported / Heritage, tier 2 Greenline / Vision / Irish Made / Herculese, tier 3 Odyssey / Enhanced / Affinity.
+// A uPVC-doors item in a box that has a uPVC range uses that range's column (same for aluminium); otherwise the first range in the box decides.
+const DEFAULT_EXTRAS = [
+  { id:'composite', name:'Composite door', family:'', fmt:'comma', perM2:false, repPrice:true, items:[
+    { id:'comp-single', name:'Single (1m × 2.1m)' }, { id:'comp-side', name:'Sidelights (1.8m × 2.1m)' }] },
+  { id:'upvcdoors', name:'uPVC doors', family:'upvc', fmt:'prefix', prefix:'uPVC', perM2:false, repPrice:true, items:[
+    { id:'upvc-french', name:'French door' }, { id:'upvc-single', name:'Single door' }, { id:'upvc-patio', name:'Patio door (2.1m × 2.1m)' }] },
+  { id:'aludoors', name:'Aluminium doors', family:'alu', fmt:'prefix', prefix:'Aluminium', perM2:false, repPrice:true, items:[
+    { id:'alu-french', name:'French door' }, { id:'alu-single', name:'Single door' }, { id:'alu-patio', name:'Patio door (2.1m × 2.1m)' }] },
+  { id:'alusliding', name:'Aluminium sliding doors', family:'alu', fmt:'prefix', prefix:'Aluminium', suffix:' sliding door', perM2:true, repPrice:true, items:[
+    { id:'slide-mono', name:'Monorail', seed:[500, 600, 650] }, { id:'slide-duo', name:'Duo rail', seed:[650, 700, 750] }, { id:'slide-triple', name:'Triple track', seed:[650, 700, 750] }] },
+  { id:'thermos', name:'Thermos door', family:'', fmt:'comma', perM2:false, repPrice:true, items:[
+    { id:'thermos-single', name:'Single (1m × 2.1m)' }, { id:'thermos-side', name:'Sidelights (1.8m × 2.1m)' }] }
+];
+const extrasList = () => { const l = rates().extras; return Array.isArray(l) && l.length ? l : (typeof priceBook !== 'undefined' && priceBook && priceBook.extras) || DEFAULT_EXTRAS; };
+const catOf = it => extrasList().find(c => c.id === it.cat);
+const itemOf = it => { const c = catOf(it); return c && (c.items || []).find(x => x.id === it.itemId); };
+const priceArr = x => Array.isArray(x.prices) ? x.prices : (x.prices && typeof x.prices === 'object' ? (x.prices[(typeof myRegion !== 'undefined' && myRegion) || 'dublin'] || []) : []);
+const isPriced = x => [0, 1, 2].every(t => num(priceArr(x)[t]) > 0);
+// what a person can pick: reps only see items the office has fully priced
+const availItems = c => (c.items || []).filter(x => !isRepUser() || isPriced(x));
+function tierCols(c) {
+  if (c.family) { const f = rates().families.find(x => x.id === c.family) || famById(c.family); const r = f.ranges.map(x => x.name); return [r[0] || 'Tier 1', r[1] || 'Tier 2', r.slice(2).join(' / ') || 'Tier 3'].map(n => [n, '']); }
+  return [['Tier 1', 'Future Proof · Alu-P · Imported · Heritage'], ['Tier 2', 'Greenline · Vision · Irish Made · Herculese'], ['Tier 3', 'Odyssey · Enhanced · Affinity']];
+}
+function rangeTier(fid, name) { const f = rates().families.find(x => x.id === fid); const i = f ? f.ranges.findIndex(r => r.name === name) : 0; return Math.max(0, Math.min(2, i)); }
+function tierFor(c, ctx) {
+  if (!ctx || !ctx.ranges || !ctx.ranges.length) return 0;
+  const r = (c.family && ctx.ranges.find(x => x.family === c.family)) || ctx.ranges[0];
+  return rangeTier(r.family, r.range);
+}
+const lcItem = n => String(n || '').replace(/^(Single|Sidelights|Patio|Monorail|Duo|Triple|Stable)\b/, m => m.toLowerCase());
+function itemDesc(it) {
+  if (!it.cat) return it.desc || '';
+  const c = catOf(it);
+  if (it.cat === 'custom' || it.itemId === '__rep') return it.desc || (c ? c.name : '');
+  const x = itemOf(it); if (!c || !x) return '';
+  let t = c.fmt === 'prefix' ? `${c.prefix || ''} ${lcItem(x.name)}${c.suffix || ''}`.trim() : `${c.name}, ${lcItem(x.name)}`;
+  if (c.perM2 && num(it.w) && num(it.h)) t += ` (${num(it.w)}m × ${num(it.h)}m)`;
+  return t;
+}
+const firstBp = it => { const v = Object.values(it.bp || {}).find(x => x !== '' && x !== undefined); return num(v); };
+
 // The office can keep its own list of extra items in the Rates tab, each with an optional price per region.
 const itemCatalog = () => { const l = rates().items; return Array.isArray(l) && l.length ? l.filter(x => x && String(x.name || '').trim()) : ITEM_OPTS.map(name => ({ name, price:'' })); };
 const itemOptNames = () => itemCatalog().map(x => x.name);
@@ -1092,8 +1163,8 @@ function renderItems() {
     if (hit) it.desc = hit;
   });
   const fams = itemFams();
-  renderItems.sig = fams.join(',');
-  $('itemsWrap').innerHTML = q.items.map((it, i) => {
+  renderItems.sig = itemsSig();
+  $('itemsWrap').innerHTML = q.items.map((it, i) => it.cat !== undefined ? catItemHTML(it, i) : (() => {
     const opts = itemOptNames();
     const custom = it.descCustom || (it.desc && !opts.includes(it.desc));
     const cp = catPrice(it);
@@ -1124,8 +1195,51 @@ function renderItems() {
       </div>`}
       ${cp === null && it.mode !== 'sqm' && fams.length > 1 ? `<div class="row pprow">${fams.map(fid => `<label class="f">${esc(famById(fid).name)} price each (€)<input type="number" step="1" data-list="items" data-i="${i}" data-f="pp" data-fam="${fid}" value="${esc(it.pp && it.pp[fid] !== undefined ? it.pp[fid] : it.price)}"></label>`).join('')}</div>` : ''}
       <div class="calc" data-itemcalc="${i}"></div>
-    </div>`; }).join('') || '<p class="hint">No extra items.</p>';
+    </div>`; })()).join('') || '<p class="hint">No extra items.</p>';
 }
+const MIC = '<button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button>';
+function catItemHTML(it, i) {
+  const cats = extrasList().filter(c => availItems(c).length || c.repPrice);
+  const c = catOf(it), x = itemOf(it);
+  const own = it.cat === 'custom' || it.itemId === '__rep';
+  const boxes = own ? boxRows() : [];
+  return `<div class="li">
+    <div class="itop">
+      <label class="f">Type<select data-list="items" data-i="${i}" data-f="cat">
+        <option value="" ${!it.cat ? 'selected' : ''}>Choose…</option>
+        ${cats.map(k => `<option value="${esc(k.id)}" ${k.id === it.cat ? 'selected' : ''}>${esc(k.name)} (${availItems(k).length} item${availItems(k).length === 1 ? '' : 's'})</option>`).join('')}
+        <option value="custom" ${it.cat === 'custom' ? 'selected' : ''}>Custom (type your own)…</option></select></label>
+      <label class="f">Qty<input type="number" min="0" data-list="items" data-i="${i}" data-f="qty" value="${esc(it.qty)}"></label>
+      <button class="btn x" type="button" data-del="items" data-i="${i}" aria-label="Remove item">✕</button>
+    </div>
+    ${c ? `<label class="f">Item<select data-list="items" data-i="${i}" data-f="itemId">
+        <option value="" ${!it.itemId ? 'selected' : ''}>Choose…</option>
+        ${availItems(c).map(y => `<option value="${esc(y.id)}" ${y.id === it.itemId ? 'selected' : ''}>${esc(y.name)}${c.perM2 ? ' (priced per m²)' : ''}${!isRepUser() && !isPriced(y) ? ' · no price yet' : ''}</option>`).join('')}
+        ${c.repPrice ? `<option value="__rep" ${it.itemId === '__rep' ? 'selected' : ''}>Rep price (type your own price)…</option>` : ''}</select></label>` : ''}
+    ${own ? `<label class="f">Description on the quote<span class="micwrap"><input data-list="items" data-i="${i}" data-f="desc" value="${esc(it.desc || '')}" placeholder="${it.cat === 'custom' ? 'e.g. Bi-fold door, 3 panel, anthracite grey' : esc(c ? c.name : '')}">${MIC}</span></label>` : ''}
+    ${it.cat && (own || x) ? `<div class="row">
+      <label class="f">Glazing<select data-list="items" data-i="${i}" data-f="glazing">
+        <option value="double" ${it.glazing !== 'triple' ? 'selected' : ''}>Double glazed</option>
+        <option value="triple" ${it.glazing === 'triple' ? 'selected' : ''}>Triple glazed (+${esc(rates().triplePct)}%)</option></select></label></div>` : ''}
+    ${x && c.perM2 ? `<div class="row"><label class="f">Width (m)<input type="number" step="0.01" min="0" data-list="items" data-i="${i}" data-f="w" value="${esc(it.w || '')}"></label><label class="f">Height (m)<input type="number" step="0.01" min="0" data-list="items" data-i="${i}" data-f="h" value="${esc(it.h || '')}"></label></div>` : ''}
+    ${own ? `<div class="f" style="font-weight:600">Price for each box on this quote (€)</div>
+      <div class="bpgrid">${boxes.map(r => `<label class="f">${esc((q.boxMode === 'products' ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-list="items" data-i="${i}" data-f="bp" data-bpbox="${esc(r.key)}" value="${esc((it.bp || {})[r.key] ?? '')}"></label>`).join('')}</div>` : ''}
+    <div class="calc" data-itemcalc="${i}"></div>
+  </div>`;
+}
+function catItemCalc(it) {
+  if (!it.cat) return '';
+  const rows = boxRows();
+  const label = r => (q.boxMode === 'products' ? r.cap + ' ' : '') + r.label;
+  if (it.cat === 'custom' || it.itemId === '__rep') return rows.map(r => `${esc(label(r))} +${eur(itemCost(it, r.family, r.ctx))}`).join(' · ');
+  const c = catOf(it), x = itemOf(it); if (!x) return '';
+  const m2 = c.perM2 ? num(it.w) * num(it.h) : 0;
+  if (isRepUser()) return c.perM2 ? (m2 ? `${m2.toFixed(2)} m² · priced by the office` : 'Enter the width and height') : '';
+  const reg = typeof priceBook !== 'undefined' && priceBook ? REGIONS[(viewRep ? priceBook.regions[viewRep.toLowerCase()] : myRegion) || 'dublin'].label + ' rates' : 'office price';
+  if (!isPriced(x)) return '<span style="color:var(--danger)">No price set for this item yet (Rates › Extra items). Reps can’t pick it.</span>';
+  return `<span class="offn">Office price (${esc(reg)}): ${rows.map(r => `${esc(label(r))} ${eur(itemCost(it, r.family, r.ctx))}`).join(' · ')}${c.perM2 && m2 ? ` · ${m2.toFixed(2)} m²` : ''}</span>`;
+}
+const itemsSig = () => itemFams().join(',') + '|' + (q.items.some(it => it.cat === 'custom' || it.itemId === '__rep') ? boxRows().map(r => r.key + '=' + r.label).join(',') : '');
 function renderReplacements() {
   $('replWrap').innerHTML = q.replacements.map((r, i) => `
     <div class="li repl">
@@ -1181,7 +1295,7 @@ $('regionTabs').addEventListener('click', e => {
   editRegion = b.dataset.region; renderPricing(); $('triplePct').value = editList().triplePct;
 });
 function renderBoxes() {
-  if (q && renderItems.sig !== undefined && renderItems.sig !== itemFams().join(',')) renderItems();
+  if (q && renderItems.sig !== undefined && renderItems.sig !== itemsSig()) renderItems();
   ensureBoxes();
   document.querySelectorAll('[data-mode]').forEach(r => { r.checked = r.value === q.boxMode; });
   const isProd = q.boxMode === 'products';
@@ -1238,6 +1352,7 @@ function updateNumbers() {
   q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = g.areaMode === 'fixed' ? (g.glazing === 'triple' ? `Fixed price ${eur(Math.max(0, num(g.fixedPrice)))} + triple glazing ${pricing.triplePct}% = ${eur(groupFixed(g))} added to every box` : `Fixed price ${eur(groupFixed(g))} added to every box`) + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
   q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.textContent = replLine(r) + ' · adds ' + eur(replCost(r), 2) + ' to every box'; });
   q.items.forEach((it, i) => { const el = document.querySelector(`[data-itemcalc="${i}"]`); if (!el) return; const fams = itemFams();
+    if (it.cat !== undefined) { el.innerHTML = catItemCalc(it); return; }
     if (catPrice(it) !== null && isRepUser()) { el.textContent = ''; return; }
     el.textContent = it.mode !== 'sqm' && fams.length > 1 ? 'Adds ' + fams.map(fid => `${famById(fid).name} ${eur(itemCost(it, fid), 2)}`).join(' · ') + ' to that product\'s boxes' : 'Adds ' + eur(itemCost(it), 2) + ' to every box'; });
   boxRows().forEach(r => { const el = document.querySelector(`[data-boxprice="${r.key}"]`); if (el) el.textContent = money(r.calc); });
@@ -1259,7 +1374,7 @@ function scopeLines(fam) {
     if (lbl) lines.push([(n ? `${n} × ${lbl}` : lbl) + (g.glazing === 'triple' ? ' (triple glazed)' : ''), g.where || '']);
   });
   (q.replacements || []).forEach(r => num(r.qty) > 0 && lines.push([replLine(r), '']));
-  q.items.forEach(it => it.desc && lines.push([it.desc + (it.glazing === 'triple' ? ' (triple glazed)' : ''), '× ' + (num(it.qty) || 1)]));
+  q.items.forEach(it => { const t = itemDesc(it); if (t) lines.push([t + (it.glazing === 'triple' ? ' (triple glazed)' : ''), '× ' + (num(it.qty) || 1)]); });
   return lines;
 }
 let docLayout = { p1:99, split:99 };   // set by renderDoc: how many blocks fit on page 1, and where page 2 ends
@@ -1476,6 +1591,9 @@ $('form').addEventListener('input', e => {
   } else if (ds.list) {
     const it = q[ds.list][+ds.i];
     if (ds.f === 'pp') { it.pp = it.pp || {}; it.pp[ds.fam] = el.value; }
+    else if (ds.f === 'bp') { it.bp = it.bp || {}; it.bp[ds.bpbox] = el.value; }
+    else if (ds.f === 'cat') { it.cat = el.value; it.itemId = ''; if (el.value === 'custom') it.desc = it.desc || ''; renderItems(); }
+    else if (ds.f === 'itemId') { it.itemId = el.value; renderItems(); }
     else it[ds.f] = el.value;
     if (ds.rerender) renderItems();
   } else if (ds.price) {
@@ -1531,7 +1649,7 @@ $('addGroup').onclick = () => {
   ensureBoxes(); renderGroups(); renderBoxes(); refresh();
 };
 $('addRepl').onclick = () => { q.replacements.push({type:'windows', qty:1, price:'', per:'each'}); renderReplacements(); refresh(); };
-$('addItem').onclick = () => { q.items.push({desc:itemOptNames()[0], qty:1, mode:'fixed', price:'', w:'', h:'', rate:'alu:0'}); renderItems(); refresh(); };
+$('addItem').onclick = () => { q.items.push({ cat:'', itemId:'', qty:1, glazing:'double', bp:{} }); renderItems(); refresh(); };
 $('addUp').onclick = () => { q.upgrades.push({desc:'', amount:''}); renderUpgrades(); refresh(); };
 $('savePricing').onclick = () => savePricingToCloud();
 
@@ -2522,6 +2640,7 @@ async function loadCloudPricing() {
       Object.keys(REGIONS).forEach(k => { if (!lists[k]) { lists[k] = JSON.parse(JSON.stringify(base)); priceDirty = true; } });
       const map = (await safeRead(REGION_MAP)) || {};
       priceBook = { lists, regions:map.regions || {}, names:map.names || {} };
+      buildExtras();
       alignItems();
       myRegion = priceBook.regions[cloud.me] || 'dublin';
       editRegion = editRegion || myRegion;
@@ -2546,12 +2665,30 @@ function alignItems() {
   if (!names.length) ITEM_OPTS.forEach(n => names.push(n));
   keys.forEach(k => { const old = priceBook.lists[k].items || []; priceBook.lists[k].items = names.map(n => ({ name:n, price:(old.find(x => x.name === n) || {}).price ?? '' })); });
 }
+// Office copy of the extra items: one structure, each item holding prices for every region.
+function buildExtras() {
+  const keys = Object.keys(REGIONS);
+  const base = keys.map(k => priceBook.lists[k].extras).find(x => Array.isArray(x) && x.length);
+  const struct = JSON.parse(JSON.stringify(base || DEFAULT_EXTRAS));
+  struct.forEach(c => (c.items || []).forEach(x => {
+    const pr = {};
+    keys.forEach(k => {
+      const lc = (priceBook.lists[k].extras || []).find(y => y.id === c.id), li = lc && (lc.items || []).find(y => y.id === x.id);
+      pr[k] = li && Array.isArray(li.prices) ? li.prices.slice(0, 3) : (x.seed ? x.seed.slice() : ['', '', '']);
+    });
+    x.prices = pr; delete x.seed;
+  }));
+  if (!base) priceDirty = true;
+  priceBook.extras = struct;
+}
+const extrasFor = k => (priceBook.extras || []).map(c => Object.assign({}, c, { items:(c.items || []).filter(x => String(x.name || '').trim()).map(x => ({ id:x.id, name:x.name, prices:((x.prices || {})[k] || ['', '', '']).slice(0, 3) })) }));
 async function savePricingToCloud() {
   const btn = $('savePricing'); btn.disabled = true; btn.textContent = 'Saving…';
   try {
     for (const k of Object.keys(REGIONS)) {
       const l = priceBook.lists[k];
-      await putPath(REGIONS[k].folder + '/rates.json', { app:'sdw-quote-manager', version:2, kind:'pricing', saved:new Date().toISOString(), pricing:{ triplePct:l.triplePct, families:l.families, items:(l.items || []).filter(x => String(x.name || '').trim()) } });
+      await putPath(REGIONS[k].folder + '/rates.json', { app:'sdw-quote-manager', version:2, kind:'pricing', saved:new Date().toISOString(), pricing:{ triplePct:l.triplePct, families:l.families, items:(l.items || []).filter(x => String(x.name || '').trim()), extras:extrasFor(k) } });
+      l.extras = extrasFor(k);
     }
     await saveRegionMap();
     priceDirty = false; cloud.priceState = 'ok';
@@ -2782,7 +2919,7 @@ function leaveRep() {
 
 // ---------- office: Rates tab ----------
 let savedBook = '';
-const bookSig = () => JSON.stringify(Object.keys(REGIONS).map(k => [priceBook.lists[k].triplePct, priceBook.lists[k].families.map(f => f.ranges.map(r => r.rate)), priceBook.lists[k].items]));
+const bookSig = () => JSON.stringify([Object.keys(REGIONS).map(k => [priceBook.lists[k].triplePct, priceBook.lists[k].families.map(f => f.ranges.map(r => r.rate))]), priceBook.extras]);
 function showRates() {
   if (cur) saveRecs();
   cur = null; view = 'rates'; renderTabs();
@@ -2800,13 +2937,60 @@ function renderRates() {
       f.ranges.map((r, ri) => `<tr><td>${esc(r.name)}</td>${keys.map(k => {
         const v = ((priceBook.lists[k].families[fi] || {}).ranges || [])[ri];
         return `<td class="r"><input type="number" step="1" min="0" data-rate="${k}.${fi}.${ri}" value="${v ? esc(v.rate) : ''}" aria-label="${esc(f.name)} ${esc(r.name)} ${REGIONS[k].label} rate"></td>`; }).join('')}</tr>`).join('')).join('') +
-    `<tr class="fam"><td colspan="${keys.length + 1}">Extra items (the drop-down list reps pick from) <span style="font-weight:500;color:var(--muted)">· € each · leave blank and the rep types their own price</span></td></tr>` +
-    D.items.map((it, ii) => `<tr><td><span style="display:flex;gap:6px;align-items:center"><input type="text" data-iname="${ii}" value="${esc(it.name)}" aria-label="Item name" style="width:100%;text-align:left"><button class="btn x" type="button" data-idel="${ii}" aria-label="Remove ${esc(it.name)}">✕</button></span></td>${keys.map(k => `<td class="r"><input type="number" step="1" min="0" data-iprice="${k}.${ii}" value="${esc((priceBook.lists[k].items[ii] || {}).price ?? '')}" placeholder="Rep types" aria-label="${esc(it.name)} ${REGIONS[k].label} price"></td>`).join('')}</tr>`).join('') +
-    `<tr><td colspan="${keys.length + 1}"><button class="btn sm" type="button" id="ratesAddItem">+ Add item</button></td></tr>` +
     `<tr class="fam"><td colspan="${keys.length + 1}">Triple glazing</td></tr><tr><td>Uplift on the price (%)</td>${keys.map(k => `<td class="r"><input type="number" step="0.5" min="0" data-trip="${k}" value="${esc(priceBook.lists[k].triplePct)}" aria-label="${REGIONS[k].label} triple glazing uplift"></td>`).join('')}</tr></tbody>`;
   ratesState();
   renderRatesWho();
 }
+// ---- Rates > Extra items ----
+let exCat = null;
+function renderExtras() {
+  const E = priceBook.extras, keys = Object.keys(REGIONS);
+  if (!E.some(c => c.id === exCat)) exCat = E[0] ? E[0].id : null;
+  $('exChips').innerHTML = E.map(c => `<button type="button" data-excat="${esc(c.id)}" class="${c.id === exCat ? 'on' : ''}">${esc(c.name)}<small>${c.items.length}</small></button>`).join('') + '<button type="button" data-exnewcat style="border-style:dashed">+ New category</button>';
+  const c = E.find(x => x.id === exCat);
+  if (!c) { $('exBody').innerHTML = '<p class="hint">No categories yet.</p>'; return; }
+  const cols = tierCols(c);
+  $('exBody').innerHTML = `<div class="exset">
+      <label>Category name <input type="text" data-exset="name" value="${esc(c.name)}"></label>
+      <label>Columns <select data-exset="family"><option value="" ${!c.family ? 'selected' : ''}>Tiers (any product)</option><option value="upvc" ${c.family === 'upvc' ? 'selected' : ''}>uPVC ranges</option><option value="alu" ${c.family === 'alu' ? 'selected' : ''}>Aluminium ranges</option></select></label>
+      <label><input type="checkbox" data-exset="perM2" ${c.perM2 ? 'checked' : ''}> Priced per m² (rep enters width × height)</label>
+      <label><input type="checkbox" data-exset="repPrice" ${c.repPrice ? 'checked' : ''}> Also offer “Rep price” (rep types their own)</label>
+      <button class="btn sm" type="button" data-exdelcat style="color:var(--danger)">Delete category</button></div>
+    <div style="overflow-x:auto"><table class="rates" style="min-width:760px"><thead><tr><th>Item</th>${cols.map(([n, sub]) => `<th class="c">${esc(n)}${c.perM2 ? ' · € per m²' : ''}${sub ? `<small>${esc(sub)}</small>` : ''}</th>`).join('')}<th></th></tr></thead><tbody>
+    ${c.items.map((x, xi) => `<tr><td><input type="text" data-exname="${xi}" value="${esc(x.name)}" style="width:100%;min-width:180px;text-align:left" aria-label="Item name"></td>
+      ${[0, 1, 2].map(t => `<td class="dr">${keys.map(k => `<span class="dl">${REGIONS[k].label[0]}</span><input type="number" step="1" min="0" data-exp="${k}.${xi}.${t}" value="${esc(((x.prices || {})[k] || [])[t] ?? '')}" aria-label="${esc(x.name)} ${esc(cols[t][0])} ${REGIONS[k].label}">`).join('')}</td>`).join('')}
+      <td><button class="btn x" type="button" data-exdel="${xi}" aria-label="Remove ${esc(x.name)}">✕</button></td></tr>`).join('')}
+    <tr><td colspan="5"><button class="btn sm" type="button" data-exadd>+ Add item</button> <span class="hint" style="margin-left:8px">D = Dublin, R = Roscommon. An item only shows to reps once all its prices are filled in.</span></td></tr></tbody></table></div>`;
+}
+$('ratesSeg').addEventListener('click', e => {
+  const b = e.target.closest('[data-rs]'); if (!b) return;
+  $('ratesSeg').querySelectorAll('[data-rs]').forEach(x => x.classList.toggle('on', x === b));
+  $('ratesM2').hidden = b.dataset.rs !== 'm2'; $('ratesEx').hidden = b.dataset.rs !== 'extras';
+  if (b.dataset.rs === 'extras') renderExtras();
+});
+$('ratesEx').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  const E = priceBook.extras, c = E.find(x => x.id === exCat);
+  if (t.dataset.excat) { exCat = t.dataset.excat; return renderExtras(); }
+  if (t.hasAttribute('data-exnewcat')) { const id = 'cat' + Date.now().toString(36); E.push({ id, name:'New category', family:'', fmt:'comma', perM2:false, repPrice:true, items:[] }); exCat = id; renderExtras(); ratesState(); const n = document.querySelector('[data-exset="name"]'); if (n) { n.focus(); n.select(); } return; }
+  if (!c) return;
+  if (t.hasAttribute('data-exadd')) { c.items.push({ id:'it' + Date.now().toString(36), name:'', prices:Object.fromEntries(Object.keys(REGIONS).map(k => [k, ['', '', '']])) }); renderExtras(); ratesState(); const ns = document.querySelectorAll('[data-exname]'); ns[ns.length - 1].focus(); return; }
+  if (t.dataset.exdel !== undefined) { c.items.splice(+t.dataset.exdel, 1); renderExtras(); ratesState(); return; }
+  if (t.hasAttribute('data-exdelcat')) { if (!confirm(`Delete the “${c.name}” category and its ${c.items.length} items? Quotes already sent keep their prices.`)) return; E.splice(E.indexOf(c), 1); exCat = null; renderExtras(); ratesState(); }
+});
+$('ratesEx').addEventListener('input', e => {
+  const el = e.target, E = priceBook.extras, c = E.find(x => x.id === exCat); if (!c) return;
+  if (el.dataset.exp) { const [k, xi, t] = el.dataset.exp.split('.'); const x = c.items[+xi]; x.prices = x.prices || {}; x.prices[k] = x.prices[k] || ['', '', '']; x.prices[k][+t] = el.value === '' ? '' : num(el.value); el.classList.add('changed'); }
+  else if (el.dataset.exname !== undefined) c.items[+el.dataset.exname].name = el.value;
+  else if (el.dataset.exset) {
+    const f = el.dataset.exset;
+    c[f] = el.type === 'checkbox' ? el.checked : el.value;
+    if (f === 'family') { c.fmt = el.value ? 'prefix' : 'comma'; c.prefix = el.value ? famById(el.value).name : ''; }
+    if (f === 'name') { const b = document.querySelector(`[data-excat="${c.id}"]`); if (b) b.firstChild.textContent = el.value; }
+    if (f === 'family' || f === 'perM2') renderExtras();
+  } else return;
+  ratesState();
+});
 function ratesState() {
   const dirty = priceDirty || bookSig() !== savedBook;
   $('ratesState').className = dirty ? 'dirty' : '';
