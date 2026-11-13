@@ -700,7 +700,8 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
     <label class="f">To<input id="sendTo" type="text" placeholder="customer@email.com" autocomplete="off"></label>
     <label class="f">CC (optional)<input id="sendCc" type="text" autocomplete="off"></label>
     <label class="f">Subject<input id="sendSubject" type="text"></label>
-    <label class="f">Message<span class="micwrap"><textarea id="sendBody" style="min-height:190px"></textarea><button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button></span></label>
+    <label class="f">Message<span class="micwrap"><textarea id="sendBody" style="min-height:150px"></textarea><button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button></span></label>
+    <div id="sigPrevWrap" class="f" hidden><span style="font-size:11.5px;color:var(--muted);font-weight:600">Signature (added to the end of the email automatically)</span><div id="sigPrev" style="border:1px solid var(--ui-line);border-radius:8px;padding:10px 12px;background:#fff;overflow-x:auto"></div></div>
     <div class="attach"><i>PDF</i><span id="sendAttach"></span></div>
     <div class="f" style="display:grid;gap:6px">
       <span style="font-size:11.5px;color:var(--muted);font-weight:600">Brochures and video to attach</span>
@@ -3030,7 +3031,10 @@ $('sendBtn').onclick = () => {
   $('sendTo').value = q.clientEmail || '';
   $('sendCc').value = '';
   $('sendSubject').value = fill(settings.subject, q);
-  $('sendBody').value = fill(settings.body, q);
+  const sigOn = settings.htmlSig !== false;
+  $('sendBody').value = sigOn ? stripSignOff(fill(settings.body, q)) : fill(settings.body, q);
+  $('sigPrevWrap').hidden = !sigOn;
+  if (sigOn) $('sigPrev').innerHTML = emailSig(q);
   $('sendAttach').textContent = pdfName();
   clearFiles();
   renderBroList(cur.broTicked || suggestedBrochures(q));
