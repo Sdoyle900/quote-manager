@@ -726,7 +726,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 12 Nov 2026 · access check</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 13 Nov 2026 · access check (Sean only)</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -1080,6 +1080,8 @@ function catPrice(it) {
   return c && num(c.price) > 0 ? num(c.price) : null;
 }
 let asRep = false;   // office previewing the rep screen
+// Only these people get the "Check what each rep can open" button
+const ACCESS_CHECKERS = ['seand@sdwindows.ie'];
 const isRepUser = () => typeof cloud !== 'undefined' && cloud.state !== 'off' && cloud.state !== 'noaccess' && (!cloud.office || asRep);
 function renderItems() {
   // a description typed before the list existed, e.g. "french door", snaps to the listed wording
@@ -2336,6 +2338,8 @@ function renderTabs() {
   const t = $('vtabs');
   t.hidden = !cloud.office || asRep;
   $('asRepBar').hidden = !asRep;
+  $('accessBtn').hidden = !ACCESS_CHECKERS.includes(cloud.me);
+  if ($('accessBtn').hidden) $('accessCard').hidden = true;
   t.querySelector('[data-view="asrep"]').hidden = !cloud.mine;
   t.querySelector('[data-view="mine"]').hidden = !cloud.mine;
   t.querySelector('[data-view="rates"]').hidden = !priceBook;
@@ -2361,6 +2365,7 @@ $('asRepExit').onclick = () => { $('accessCard').hidden = true; setAsRep(false);
 // Access check: reads the SharePoint sharing on every folder and works out, for each rep,
 // what they can open. A rep should reach only their own folder and one price list.
 $('accessBtn').onclick = async () => {
+  if (!ACCESS_CHECKERS.includes(cloud.me)) return;
   const card = $('accessCard'); card.hidden = false;
   card.innerHTML = '<p class="hint" style="margin:0">Checking SharePoint sharing on every folder…</p>';
   try {
