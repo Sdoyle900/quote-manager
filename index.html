@@ -783,7 +783,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 13 Nov 2026 · statistics</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 17 Nov 2026 · no example quotes</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2430,6 +2430,7 @@ async function signOut() {
   account = null; clearInterval(pollTimer);
   // signing out also wipes this person's quote copy from this computer (it's all in SharePoint)
   if (cloud.me) { try { localStorage.removeItem('sdw-qm-quotes:' + cloud.me); localStorage.removeItem('sdw-qm-cloudmeta:' + cloud.me); localStorage.removeItem('sdw-pricing'); } catch (e) {} }
+  delete settings.lastUser; saveSettings();
   location.hash = ''; location.reload();
 }
 // Ask Microsoft only for the permissions a request needs, so SharePoint keeps working
@@ -2661,6 +2662,7 @@ function switchToUser(email) {
   recsKey = key;
   recs = list.map(normalizeRec);
   cloud.meta = store.get('sdw-qm-cloudmeta:' + email, {});
+  if (settings.lastUser !== email) { settings.lastUser = email; saveSettings(); }
 }
 
 async function cloudInit() {
@@ -3742,7 +3744,15 @@ window.addEventListener('hashchange', route);
 function fitEditor() { if ($('editView').hidden) return; $('editView').style.height = Math.max(300, window.innerHeight - document.querySelector('.bar').getBoundingClientRect().height) + 'px'; }
 window.addEventListener('resize', () => { if (cur) { fitEditor(); fitPreview(); } });
 window.addEventListener('beforeunload', saveRecs);
-seedExamples();
+if (PRACTICE) seedExamples();
+else {
+  // The real quote manager never shows the example quotes. Clear any left on this computer,
+  // and open straight onto the signed-in person's own saved copy while SharePoint loads.
+  const legacy = store.get('sdw-qm-quotes', []);
+  if (legacy.some(r => r.demo)) store.set('sdw-qm-quotes', legacy.filter(r => !r.demo));
+  if (settings.lastUser) { recsKey = 'sdw-qm-quotes:' + settings.lastUser; recs = (store.get(recsKey, []) || []).map(normalizeRec); }
+  else recs = recs.filter(r => !r.demo);
+}
 renderMe();
 route();
 initMsal();
