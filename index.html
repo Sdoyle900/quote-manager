@@ -657,8 +657,6 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
     <p id="mapSub"></p></div>
   <div class="mp-wrap"><div class="mp-box" id="mapBox"></div><div class="mp-list" id="mapList"></div></div>
   <div class="mp-leg" id="mapLegend"></div>
-  <div class="rates-card mp-key" id="mapKeyRow" hidden><label class="f">TomTom key <span class="hint" style="font-weight:400">(optional, office only) The same key Sash Dash uses. With it, every Eircode lands on the exact house; without it, pins are placed by the address.</span>
-    <span style="display:flex;gap:8px;flex-wrap:wrap"><input id="mapKeyIn" autocomplete="off" spellcheck="false" placeholder="paste the key from developer.tomtom.com" style="flex:1;min-width:220px"><button class="btn primary" id="mapKeySave" type="button">Save key</button></span></label></div>
 </main>
 
 <main id="ratesView" class="view-list" hidden>
@@ -670,6 +668,9 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
   </div>
   <h3 class="rates-h3">Who uses which rates</h3>
   <div class="rates-card"><div id="ratesWho"></div></div>
+  <h3 class="rates-h3">Map</h3>
+  <div class="rates-card mp-key" id="mapKeyRow"><label class="f">TomTom key <span class="hint" style="font-weight:400">The TomTom key (the same one Sash Dash uses) for the Map tab. Only the office sees this box. With it, every Eircode lands on the exact house; without it, pins are placed by the address.</span>
+    <span style="display:flex;gap:8px;flex-wrap:wrap"><input id="mapKeyIn" autocomplete="off" spellcheck="false" placeholder="paste the key from developer.tomtom.com" style="flex:1;min-width:220px"><button class="btn primary" id="mapKeySave" type="button">Save key</button></span></label></div>
 </main>
 
 <main id="listView" class="view-list">
@@ -830,7 +831,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 17 Nov 2026 · map</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 17 Nov 2026 · map 2</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -3409,9 +3410,6 @@ function renderMap() {
     const k = MAP_K[j.kind], a = addrLines(j.d).filter(x => x.toUpperCase().replace(/\s/g, '') !== (j.eir || '#').replace(/\s/g, '')), town = [a.length > 1 ? a[a.length - 1] : (a[0] || ''), j.eir].filter(Boolean).join(' · ');
     return `<button type="button" class="mp-li ${mapSel === j.id ? 'on' : ''}" data-mpsel="${esc(j.id)}"><i style="background:${k[1]}"></i><span><b>${esc(j.d.client || '(no name)')}</b><small>${esc(displayRef(j.latest.data))}${office && !rep ? ' · ' + esc(j.s.name.split(' ')[0]) : ''} · ${esc(town || 'no address')}</small>${geoOf(j) ? '' : `<small class="mp-nf">${j.key ? (geoCache[j.key] && geoCache[j.key].none ? 'Address not found' : 'Finding…') : 'No address on the quote'}</small>`}</span><em>${kEur(j.price)}</em></button>`;
   }).join('') || '<p class="hint" style="padding:10px">No sent quotes here yet.</p>');
-  const keyRow = $('mapKeyRow');
-  keyRow.hidden = !(cloud.office && !asRep && priceBook);
-  if (!keyRow.hidden && document.activeElement !== $('mapKeyIn')) $('mapKeyIn').value = priceBook.mapKey || '';
   $('mapLegend').innerHTML = `<span><i style="background:${MAP_K.won[1]}"></i>Won</span><span><i style="background:${MAP_K.open[1]}"></i>Open (sent, waiting)</span><span><i style="background:${MAP_K.lost[1]}"></i>Lost</span><span><i class="ap"></i>Dashed ring: placed roughly (town or area only)</span>${office && !rep ? '<span>Letter on the pin: the rep’s initial</span>' : ''}<span>Drafts aren’t shown. ${office ? 'Drag one of your own pins to move it.' : 'Pin in the wrong spot? Drag it onto the house.'}</span>`;
   drawMap(shown, office && !rep);
   mapGeocode();
@@ -3507,6 +3505,7 @@ function renderRates() {
     `<tr class="fam"><td colspan="${keys.length + 1}">Triple glazing</td></tr><tr><td>Uplift on the price (%)</td>${keys.map(k => `<td class="r"><input type="number" step="0.5" min="0" data-trip="${k}" value="${esc(priceBook.lists[k].triplePct)}" aria-label="${REGIONS[k].label} triple glazing uplift"></td>`).join('')}</tr></tbody>`;
   ratesState();
   renderRatesWho();
+  if (document.activeElement !== $('mapKeyIn')) $('mapKeyIn').value = priceBook.mapKey || '';
 }
 // ---- Rates > Extra items ----
 let exCat = null;
