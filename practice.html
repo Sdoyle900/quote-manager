@@ -1001,7 +1001,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · email thread</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · own emails fix</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2095,7 +2095,7 @@ async function removeJobSheet(root, i) {
 // =====================================================================
 const thCache = {}, thOpen = {}, thBodies = {}, thComp = {};
 let thBusy = false;
-const TH_SEL = 'id,subject,from,toRecipients,ccRecipients,sentDateTime,receivedDateTime,bodyPreview,hasAttachments,webLink,conversationId,isDraft';
+const TH_SEL = 'id,subject,from,toRecipients,ccRecipients,sentDateTime,receivedDateTime,bodyPreview,hasAttachments,webLink,conversationId,isDraft,parentFolderId';
 function thAddrs(root) {
   const fam = familyOf(root), d = latestOf(fam).data, set = new Set();
   splitAddrs(d.clientEmail).forEach(a => set.add(a.toLowerCase()));
@@ -2111,7 +2111,7 @@ function thConvs(root) {
   (root.mailConvs || []).forEach(c => out.add(c));
   return [...out].filter(c => !/^example/.test(c)).slice(-12);
 }
-const thIsMe = m => myAddrs.includes(String(m.from && m.from.emailAddress && m.from.emailAddress.address || '').toLowerCase());
+const thIsMe = m => isMine(m);
 const thWhen = m => Date.parse(thIsMe(m) ? (m.sentDateTime || m.receivedDateTime) : (m.receivedDateTime || m.sentDateTime));
 function thDemo(root) {
   // practice / not connected: build the thread from what the quote manager has recorded
@@ -2130,6 +2130,7 @@ function thNorm(m) {
     subject:m.subject || '(no subject)', preview:m.bodyPreview || '', att:m.hasAttachments, link:m.webLink || '', conv:m.conversationId, live:true };
 }
 async function fetchThread(root) {
+  await getSentFolder();
   const found = new Map();
   const add = list => (list || []).forEach(m => { if (!m.isDraft && !found.has(m.id)) found.set(m.id, m); });
   for (const a of thAddrs(root).slice(0, 4)) {
@@ -2953,7 +2954,7 @@ const SCOPE_SETS = { sites:['User.Read', 'Sites.ReadWrite.All'], mailRead:['User
 function scopesFor(path, method) {
   const p = String(path).replace(/^https:\/\/graph\.microsoft\.com\/v1\.0/, '');
   if (/^\/(sites|drives)\//.test(p)) return SCOPE_SETS.sites;
-  if (/^\/me\/messages/.test(p)) return (method || 'GET') === 'GET' ? SCOPE_SETS.mailRead : SCOPE_SETS.mailWrite;
+  if (/^\/me\/(messages|mailFolders)/.test(p)) return (method || 'GET') === 'GET' ? SCOPE_SETS.mailRead : SCOPE_SETS.mailWrite;
   if (/^\/me\b/.test(p)) return SCOPE_SETS.me;
   return SCOPES;
 }
@@ -2995,6 +2996,7 @@ async function loadMe() {
   try {
     const me = await graph('/me?$select=mail,userPrincipalName,displayName', {}, false);
     myAddrs = [me.mail, me.userPrincipalName].filter(Boolean).map(s => s.toLowerCase());
+    (settings.myAliases || []).forEach(a => { if (!myAddrs.includes(a)) myAddrs.push(a); });
     myName = me.displayName || (account && account.name) || '';
   } catch (e) { console.warn(e); }
 }
@@ -4846,14 +4848,32 @@ function startPolling() {
   pollTimer = setInterval(() => checkReplies(false), Math.max(1, num(settings.interval) || 5) * 60000);
   checkReplies(false);
 }
+// Your own emails (the quote itself, follow-ups, anything you send from Outlook) are never "replies".
+// They're recognised by sitting in your Sent Items, so it works whatever address Outlook shows them from.
+let sentFolderId = null;
+async function getSentFolder() {
+  if (sentFolderId) return sentFolderId;
+  try { const f = await graph('/me/mailFolders/sentitems?$select=id', {}, false); sentFolderId = f && f.id || ''; } catch (e) { console.warn(e); }
+  return sentFolderId;
+}
+const fromAddr = m => String(m.from && m.from.emailAddress && m.from.emailAddress.address || '').toLowerCase();
+function isMine(m) {
+  const a = fromAddr(m);
+  if (sentFolderId && m.parentFolderId === sentFolderId) {
+    if (a && !myAddrs.includes(a)) { myAddrs.push(a); settings.myAliases = [...new Set((settings.myAliases || []).concat(a))]; saveSettings(); }
+    return true;
+  }
+  return !!a && myAddrs.includes(a);
+}
 async function checkReplies(manual) {
   if (checking || viewRep) return;
   if (!account) { if (manual) signIn(); return; }
   checking = true;
   const btns = ['checkBtn', 'checkOneBtn'].map($).filter(Boolean);
   btns.forEach(b => { b.disabled = true; b.textContent = 'Checking…'; });
-  const fresh = [];
+  const fresh = []; let fixed = false;
   try {
+    await getSentFolder();
     const cutoff = Date.now() - 180 * 86400000;
     for (const r of recs) {
       if (r.demo) continue;
@@ -4861,11 +4881,18 @@ async function checkReplies(manual) {
       for (const s of threads) {
         if (!s.conversationId || s.at < cutoff) continue;
         const f = encodeURIComponent(`conversationId eq '${s.conversationId.replace(/'/g, "''")}'`);
-        const data = await graph(`/me/messages?$filter=${f}&$select=id,internetMessageId,from,receivedDateTime,bodyPreview,webLink,isDraft&$top=50`, {}, !!manual);
+        const data = await graph(`/me/messages?$filter=${f}&$select=id,internetMessageId,from,receivedDateTime,bodyPreview,webLink,isDraft,parentFolderId&$top=50`, {}, !!manual);
         for (const m of (data && data.value) || []) {
-          const from = String(m.from && m.from.emailAddress && m.from.emailAddress.address || '').toLowerCase();
-          if (!from || m.isDraft || myAddrs.includes(from)) continue;
-          const key = m.internetMessageId || m.id;
+          const from = fromAddr(m), key = m.internetMessageId || m.id;
+          if (m.isDraft) continue;
+          if (isMine(m)) {
+            // one of ours that an earlier version wrongly counted as a reply: take it back out
+            const before = r.replies.length;
+            r.replies = r.replies.filter(x => x.key !== key);
+            if (r.replies.length !== before) { r.unseen = Math.max(0, (r.unseen || 0) - (before - r.replies.length)); fixed = true; }
+            continue;
+          }
+          if (!from) continue;
           if (r.replies.some(x => x.key === key)) continue;
           r.replies.push({ key, from:m.from.emailAddress.name || from, email:from, at:Date.parse(m.receivedDateTime), preview:(m.bodyPreview || '').slice(0, 400), link:m.webLink || '' });
           if (r !== cur) r.unseen = (r.unseen || 0) + 1;
@@ -4873,8 +4900,10 @@ async function checkReplies(manual) {
         }
       }
     }
+    recs.forEach(r => { const n = r.replies.length; r.replies = r.replies.filter(x => !myAddrs.includes(String(x.email || '').toLowerCase())); if (r.replies.length !== n) { r.unseen = Math.min(r.unseen || 0, r.replies.length); fixed = true; } });
     settings.lastCheck = Date.now(); saveSettings();
-    if (fresh.length) { saveRecs(); notifyReplies(fresh); }
+    if (fresh.length || fixed) saveRecs();
+    if (fresh.length) notifyReplies(fresh);
     if (manual) toast(fresh.length ? `${fresh.length} new ${fresh.length === 1 ? 'reply' : 'replies'}` : 'No new replies');
   } catch (e) {
     console.error(e);
