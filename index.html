@@ -610,6 +610,56 @@ table.st-tb tr[data-strep] { cursor:pointer; } table.st-tb tr[data-strep]:hover 
 .ov-att { list-style:none; margin:4px 0 0; padding:0; display:grid; gap:3px; font-size:12.5px; }
 .rp-sent { margin-top:6px; color:#15803d; font-weight:600; }
 .rp-sentb { color:#15803d !important; }
+.send-fu { margin:0; }
+.send-fu .sf-req { font-size:10.5px; letter-spacing:.04em; color:#b42318; background:#fef0ee; border-radius:8px; padding:1px 7px; margin-left:6px; text-transform:none; }
+.send-fu:not(.need) .sf-req { display:none; }
+.send-fu.need { border-color:#e8a29a; box-shadow:0 0 0 3px #fde4e0; }
+.send-fu textarea { font:inherit; resize:vertical; }
+.th-box { display:grid; gap:10px; }
+.th-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.th-note { margin:0; font-size:12px; color:var(--muted); background:var(--tint); border-radius:6px; padding:7px 10px; }
+.th-comp { border:1px solid var(--ui-line); border-radius:10px; padding:10px 12px; display:grid; gap:8px; background:#fff; }
+.th-comp.over { border-color:var(--navy); background:#eef2fb; }
+.th-ch { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.oseg.sm button { padding:4px 10px; font-size:12px; }
+.oseg.sm button:disabled { opacity:.45; cursor:default; }
+.th-to { font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:6px; flex:1; min-width:200px; }
+.th-to b { color:var(--ink); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.th-to input { flex:1; min-width:0; }
+.th-subj { width:100%; }
+.th-re { font-size:12.5px; color:var(--muted); }
+.th-comp textarea { width:100%; min-height:96px; font:inherit; resize:vertical; }
+.th-sig summary { font-size:11.5px; color:var(--muted); cursor:pointer; }
+.th-sig > div { margin-top:6px; border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+.th-files { display:flex; flex-wrap:wrap; gap:6px; }
+.th-files:empty { display:none; }
+.th-files span { font-size:12px; background:var(--tint); border:1px solid var(--line); border-radius:6px; padding:3px 6px; display:inline-flex; gap:6px; align-items:center; }
+.th-files button { border:0; background:none; cursor:pointer; color:var(--muted); padding:0; }
+.th-act { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.th-act .btn.primary { margin-left:auto; }
+.th-attach { cursor:pointer; }
+.th-msg { font-size:12px; color:var(--muted); }
+.th-list { display:grid; gap:8px; }
+.em { border:1px solid var(--ui-line); border-radius:10px; background:#fff; padding:10px 12px; display:grid; gap:4px; }
+.em.out { border-left:3px solid var(--navy); }
+.em.in { border-left:3px solid #c9a24a; background:#fffcf3; }
+.em-h { display:grid; grid-template-columns:32px minmax(0, 1fr) auto; gap:10px; align-items:center; cursor:pointer; }
+.av { width:32px; height:32px; border-radius:50%; background:var(--navy); color:#fff; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; }
+.em.in .av { background:#c9a24a; }
+.em-who { min-width:0; }
+.em-who b { font-size:13.5px; color:var(--ink); }
+.em-who small { display:block; color:var(--muted); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.em-tag { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8a6a00; background:#fbf0d2; border-radius:4px; padding:1px 5px; margin-left:4px; }
+.em-h time { font-size:11.5px; color:var(--muted); white-space:nowrap; }
+.em-subj { font-size:12.5px; font-weight:600; color:var(--navy); padding-left:42px; }
+.em-prev { font-size:12.5px; color:var(--muted); padding-left:42px; white-space:pre-wrap; }
+.em-prev.full { color:var(--ink); }
+.em-body { width:100%; border:0; min-height:120px; background:#fff; }
+.em-att { display:flex; flex-wrap:wrap; gap:6px; padding-left:42px; }
+.em-att button { font:inherit; font-size:12px; border:1px solid var(--ui-line); background:var(--tint); border-radius:6px; padding:3px 8px; cursor:pointer; }
+.em-act { display:flex; gap:14px; padding-left:42px; }
+.em-act .lnk { font:inherit; font-size:12px; color:var(--navy); background:none; border:0; padding:0; cursor:pointer; text-decoration:none; font-weight:600; }
+.em-act .lnk:hover { text-decoration:underline; }
 .nojs { display:inline-block; margin-top:3px; font:inherit; font-size:11px; font-weight:700; color:#b42318; background:#fef0ee; border:1px solid #f5c2bc; border-radius:10px; padding:1px 8px; white-space:nowrap; cursor:default; }
 button.nojs { cursor:pointer; }
 button.nojs:hover { border-color:#b42318; }
@@ -891,6 +941,16 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
       <div class="files" id="fileList"></div>
       <label class="check"><input type="checkbox" id="shrinkPhotos" checked> Shrink photos to email size (recommended)</label>
     </div>
+    <div class="fubox send-fu" id="sendFu">
+      <div class="lbl" style="margin:0">Follow-up emails <span class="sf-req">Choose before sending</span></div>
+      <div class="row">
+        <label class="f">Send a follow-up<select id="sfFreq"></select></label>
+        <label class="f">Stop after<select id="sfMax"></select></label>
+      </div>
+      <label class="check"><input type="checkbox" id="sfStop"> Stop automatically when they reply</label>
+      <label class="f">Follow-up message<textarea id="sfMsg" style="min-height:90px"></textarea></label>
+      <div class="fnext" id="sfNext"></div>
+    </div>
     <div class="meter" id="meter"><div class="mbar"><i id="meterFill"></i></div><p id="broTotal"></p></div>
     <label class="check"><input type="checkbox" id="splitOk" checked> If it's over the limit, send it as separate emails (part 1, part 2…)</label>
     <p class="hint" id="sendNote"></p>
@@ -941,7 +1001,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · repairs 4</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · email thread</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2028,6 +2088,224 @@ async function removeJobSheet(root, i) {
   if (f.id && cloud.driveId) { try { await graph(`/drives/${cloud.driveId}/items/${f.id}`, { method:'DELETE' }); } catch (e) { if (e.status !== 404) throw e; } }
   saved.splice(i, 1); root.updated = Date.now(); saveRecs();
 }
+// =====================================================================
+// Email thread in the customer window: every email to and from this customer in your Outlook
+// (quotes, follow-ups, replies, and anything sent straight from Outlook), newest first.
+// Reply, reply all or write a new email right here; your signature goes on every one.
+// =====================================================================
+const thCache = {}, thOpen = {}, thBodies = {}, thComp = {};
+let thBusy = false;
+const TH_SEL = 'id,subject,from,toRecipients,ccRecipients,sentDateTime,receivedDateTime,bodyPreview,hasAttachments,webLink,conversationId,isDraft';
+function thAddrs(root) {
+  const fam = familyOf(root), d = latestOf(fam).data, set = new Set();
+  splitAddrs(d.clientEmail).forEach(a => set.add(a.toLowerCase()));
+  jobSends(fam).forEach(s => splitAddrs(s.to).forEach(a => set.add(a.toLowerCase())));
+  jobReplies(fam).forEach(r => r.email && set.add(String(r.email).toLowerCase()));
+  myAddrs.forEach(a => set.delete(a));
+  return [...set].filter(validEmail);
+}
+function thConvs(root) {
+  const fam = familyOf(root), out = new Set();
+  jobSends(fam).forEach(s => s.conversationId && out.add(s.conversationId));
+  (root.fuLog || []).forEach(l => l.conversationId && out.add(l.conversationId));
+  (root.mailConvs || []).forEach(c => out.add(c));
+  return [...out].filter(c => !/^example/.test(c)).slice(-12);
+}
+const thIsMe = m => myAddrs.includes(String(m.from && m.from.emailAddress && m.from.emailAddress.address || '').toLowerCase());
+const thWhen = m => Date.parse(thIsMe(m) ? (m.sentDateTime || m.receivedDateTime) : (m.receivedDateTime || m.sentDateTime));
+function thDemo(root) {
+  // practice / not connected: build the thread from what the quote manager has recorded
+  const fam = familyOf(root), d = latestOf(fam).data, me = myName || d.signName || 'You', out = [];
+  jobSends(fam).forEach((s, i) => out.push({ id:'s' + i + s.at, me:true, fromName:me, to:s.to, at:s.at, subject:s.subject, preview:fill(settings.body, s.rec.data).slice(0, 300), att:s.brochures && s.brochures.length }));
+  (root.fuLog || []).filter(l => !l.pending).forEach((l, i) => out.push({ id:'f' + i + l.at, me:true, fromName:me, to:d.clientEmail, at:l.at, subject:'Re: ' + fill(settings.subject, d), preview:fill(fuOf(root).msg || settings.fuMsg, d).slice(0, 300) }));
+  jobReplies(fam).forEach((r, i) => out.push({ id:'r' + i + r.at, me:false, fromName:r.from, fromAddr:r.email, to:me, at:r.at, subject:'Re: ' + fill(settings.subject, d), preview:r.preview }));
+  (root.localMails || []).forEach(m => out.push(m));
+  return out.sort((a, b) => b.at - a.at);
+}
+function thNorm(m) {
+  const from = (m.from && m.from.emailAddress) || {};
+  return { id:m.id, me:thIsMe(m), fromName:from.name || from.address || '', fromAddr:from.address || '', at:thWhen(m),
+    to:(m.toRecipients || []).map(r => r.emailAddress.name || r.emailAddress.address).join(', '),
+    cc:(m.ccRecipients || []).map(r => r.emailAddress.name || r.emailAddress.address).join(', '),
+    subject:m.subject || '(no subject)', preview:m.bodyPreview || '', att:m.hasAttachments, link:m.webLink || '', conv:m.conversationId, live:true };
+}
+async function fetchThread(root) {
+  const found = new Map();
+  const add = list => (list || []).forEach(m => { if (!m.isDraft && !found.has(m.id)) found.set(m.id, m); });
+  for (const a of thAddrs(root).slice(0, 4)) {
+    const r = await graph(`/me/messages?$search=${encodeURIComponent('"participants:' + a + '"')}&$top=60&$select=${TH_SEL}`, {}, false);
+    add(r && r.value);
+  }
+  for (const c of thConvs(root)) {
+    const r = await graph(`/me/messages?$filter=${encodeURIComponent(`conversationId eq '${c.replace(/'/g, "''")}'`)}&$top=50&$select=${TH_SEL}`, {}, false);
+    add(r && r.value);
+  }
+  return [...found.values()].map(thNorm).sort((a, b) => b.at - a.at);
+}
+const thLive = root => !!account && !root.demo && !PRACTICE && !viewRep;
+async function loadThread(root, force) {
+  const c = thCache[root.id];
+  if (!thLive(root)) { thCache[root.id] = { msgs:thDemo(root), at:Date.now(), demo:true }; return renderThread(); }
+  if (thBusy || (!force && c && Date.now() - c.at < 60000)) return renderThread();
+  thBusy = true; renderThread(true);
+  try { thCache[root.id] = { msgs:await fetchThread(root), at:Date.now() }; }
+  catch (e) { thCache[root.id] = { msgs:(c && c.msgs) || [], at:Date.now(), err:authError(e) }; }
+  thBusy = false;
+  if (profId === root.id) renderThread();
+}
+const initials = s => String(s || '?').replace(/[^A-Za-zÀ-ÿ' ]/g, ' ').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+function thComposer(root) {
+  const c = thComp[root.id] || (thComp[root.id] = { mode:'reply', target:'', text:'', files:[] });
+  const msgs = (thCache[root.id] || {}).msgs || [];
+  const fam = familyOf(root), d = latestOf(fam).data;
+  let tgt = msgs.find(m => m.id === c.target);
+  if (!tgt && c.mode !== 'new') tgt = msgs.find(m => !m.me) || msgs[0];
+  const mode = tgt ? c.mode : 'new';
+  const who = tgt ? (tgt.me ? tgt.to : `${tgt.fromName}${tgt.fromAddr ? ' <' + tgt.fromAddr + '>' : ''}`) : (d.clientEmail || '');
+  return `<div class="th-comp" data-thcomp>
+    <div class="th-ch"><div class="oseg sm" role="group">
+      <button type="button" data-thmode="reply" class="${mode === 'reply' ? 'on' : ''}" ${tgt ? '' : 'disabled'}>Reply</button>
+      <button type="button" data-thmode="all" class="${mode === 'all' ? 'on' : ''}" ${tgt ? '' : 'disabled'}>Reply all</button>
+      <button type="button" data-thmode="new" class="${mode === 'new' ? 'on' : ''}">New email</button></div>
+      <span class="th-to">${mode === 'new' ? 'To' : 'To'}: ${mode === 'new' ? `<input type="text" data-thto value="${esc(c.to != null ? c.to : (d.clientEmail || ''))}" placeholder="customer@email.com">` : `<b>${esc(who)}</b>${mode === 'all' && tgt && tgt.cc ? ` <small>+ cc ${esc(tgt.cc)}</small>` : ''}`}</span></div>
+    ${mode === 'new' ? `<input type="text" class="th-subj" data-thsubj value="${esc(c.subject != null ? c.subject : fill(settings.subject, d))}" placeholder="Subject">` : tgt ? `<div class="th-re">Re: ${esc(tgt.subject.replace(/^(re|fw|fwd):\s*/i, ''))}</div>` : ''}
+    <span class="micwrap"><textarea data-thtext rows="5" placeholder="Write your reply…">${esc(c.text)}</textarea>${MIC_HTML}</span>
+    <details class="th-sig"><summary>Your signature is added automatically</summary><div>${emailSig(d)}</div></details>
+    <div class="th-files">${c.files.map((f, i) => `<span>📎 ${esc(f.name)} <small>${fmtSize(f.size)}</small><button type="button" data-thfdel="${i}" aria-label="Remove">✕</button></span>`).join('')}</div>
+    <div class="th-act"><label class="btn sm th-attach">📎 Attach<input type="file" multiple hidden data-thfile></label><span class="hint">or drag files onto this box</span>
+      <span class="th-msg" data-thmsg></span><button type="button" class="btn primary" data-thsend>Send</button></div>
+  </div>`;
+}
+function renderThread(loading) {
+  const box = document.getElementById('thBox'); if (!box) return;
+  const root = recs.find(r => r.id === profId); if (!root) return;
+  const c = thCache[root.id], msgs = (c && c.msgs) || [];
+  const note = !account && !root.demo && !PRACTICE ? '<p class="th-note">Connect Outlook to see the full email thread and reply from here.</p>'
+    : viewRep ? '<p class="th-note">These emails are in the rep’s own Outlook. You’re seeing what the quote manager recorded.</p>'
+    : (root.demo || PRACTICE) ? '<p class="th-note">Practice: the thread is made up from the example, and nothing is really sent.</p>' : '';
+  box.innerHTML = `<div class="th-head"><div class="lbl" style="margin:0">Emails <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500">${msgs.length ? msgs.length : ''}</span></div>
+      ${thLive(root) ? `<button type="button" class="btn sm" data-threfresh ${loading || thBusy ? 'disabled' : ''}>${loading || thBusy ? 'Loading…' : '↻ Refresh'}</button>` : ''}</div>
+    ${note}${c && c.err ? `<p class="err" style="margin:0">Couldn’t load the emails: ${esc(c.err)}</p>` : ''}
+    ${viewRep ? '' : thComposer(root)}
+    <div class="th-list">${msgs.map(m => {
+      const open = thOpen[m.id], b = thBodies[m.id];
+      return `<div class="em ${m.me ? 'out' : 'in'} ${open ? 'open' : ''}" data-emid="${esc(m.id)}">
+        <div class="em-h" data-emtoggle><span class="av">${esc(initials(m.fromName))}</span>
+          <div class="em-who"><b>${esc(m.fromName || '')}</b>${m.me ? '' : ' <span class="em-tag">Customer</span>'}<small>To: ${esc(m.to || '')}${m.cc ? ' · Cc: ' + esc(m.cc) : ''}</small></div>
+          <time>${fmtDT(m.at)}${m.att ? ' 📎' : ''}</time></div>
+        <div class="em-subj">${esc(m.subject || '')}</div>
+        ${open ? (m.live ? (b ? `<iframe class="em-body" sandbox="allow-same-origin allow-popups" referrerpolicy="no-referrer" data-embody></iframe>${b.att && b.att.length ? `<div class="em-att">${b.att.map(a => `<button type="button" data-ematt="${esc(a.id)}" data-emattname="${esc(a.name)}">📎 ${esc(a.name)} <small>${fmtSize(a.size || 0)}</small></button>`).join('')}</div>` : ''}` : '<p class="hint">Loading…</p>')
+          : `<div class="em-prev full">${esc(m.preview || '')}</div>`) : `<div class="em-prev">${esc((m.preview || '').slice(0, 180))}${(m.preview || '').length > 180 ? '…' : ''}</div>`}
+        <div class="em-act">${viewRep ? '' : `<button type="button" class="lnk" data-emreply="${esc(m.id)}">↩ Reply</button><button type="button" class="lnk" data-emreplyall="${esc(m.id)}">↩ Reply all</button>`}${m.link ? `<a class="lnk" href="${esc(m.link)}" target="_blank" rel="noopener">Open in Outlook</a>` : ''}</div>
+      </div>`;
+    }).join('') || (loading || thBusy ? '<p class="hint">Loading emails from Outlook…</p>' : '<p class="hint">No emails with this customer yet.</p>')}</div>`;
+  box.querySelectorAll('[data-embody]').forEach(f => {
+    const id = f.closest('[data-emid]').dataset.emid, b = thBodies[id];
+    f.srcdoc = `<base target="_blank"><style>body{margin:0;font:13px/1.45 Calibri,Arial,sans-serif;color:#22263a;word-wrap:break-word}img{max-width:100%;height:auto}</style>${b.html}`;
+    f.onload = () => { try { f.style.height = Math.min(900, f.contentDocument.documentElement.scrollHeight + 8) + 'px'; } catch (e) {} };
+  });
+}
+async function openEmail(id) {
+  thOpen[id] = !thOpen[id]; renderThread();
+  if (!thOpen[id] || thBodies[id]) return;
+  const root = recs.find(r => r.id === profId), m = ((thCache[root.id] || {}).msgs || []).find(x => x.id === id);
+  if (!m || !m.live) return;
+  try {
+    const full = await graph(`/me/messages/${encodeURIComponent(id)}?$select=body,hasAttachments`, {}, false);
+    let att = [];
+    if (full.hasAttachments) { const a = await graph(`/me/messages/${encodeURIComponent(id)}/attachments?$select=id,name,size,isInline`, {}, false); att = (a.value || []).filter(x => !x.isInline); }
+    const html = full.body.contentType === 'html' ? full.body.content : `<pre style="white-space:pre-wrap;font:inherit">${esc(full.body.content)}</pre>`;
+    thBodies[id] = { html:html.replace(/<script[\s\S]*?<\/script>/gi, ''), att };
+  } catch (e) { thBodies[id] = { html:`<p style="color:#b42318">Couldn’t open this email: ${esc(e.message)}</p>`, att:[] }; }
+  renderThread();
+}
+async function thSend(root) {
+  const c = thComp[root.id], box = document.querySelector('[data-thcomp]'), btn = box.querySelector('[data-thsend]'), msgEl = box.querySelector('[data-thmsg]');
+  c.text = box.querySelector('[data-thtext]').value;
+  const fam = familyOf(root), d = latestOf(fam).data, msgs = (thCache[root.id] || {}).msgs || [];
+  let tgt = msgs.find(m => m.id === c.target); if (!tgt && c.mode !== 'new') tgt = msgs.find(m => !m.me) || msgs[0];
+  const mode = tgt ? c.mode : 'new';
+  if (!c.text.trim()) { msgEl.textContent = 'Write a message first.'; return; }
+  let to = [], subject = '';
+  if (mode === 'new') {
+    to = splitAddrs(box.querySelector('[data-thto]').value); subject = box.querySelector('[data-thsubj]').value.trim();
+    if (!to.length || to.some(a => !validEmail(a))) { msgEl.textContent = 'Check the email address.'; return; }
+    if (!subject) { msgEl.textContent = 'Add a subject.'; return; }
+  }
+  if (root.demo || PRACTICE) {
+    root.localMails = (root.localMails || []).concat({ id:'l' + Date.now(), me:true, fromName:myName || d.signName || 'You', to:mode === 'new' ? to.join(', ') : (tgt.me ? tgt.to : tgt.fromName), at:Date.now(), subject:mode === 'new' ? subject : 'Re: ' + tgt.subject.replace(/^(re|fw|fwd):\s*/i, ''), preview:c.text, att:c.files.length > 0 });
+    thComp[root.id] = { mode:'reply', target:'', text:'', files:[] };
+    toast('Practice: added to the thread, but nothing was really sent');
+    return loadThread(root, true);
+  }
+  if (!account && !(await signIn())) { msgEl.textContent = 'Connect Outlook to send.'; return; }
+  btn.disabled = true; let draft = null;
+  try {
+    const mine = textToHtml(c.text, d);
+    if (mode === 'new') {
+      msgEl.textContent = 'Creating email…';
+      draft = await graph('/me/messages', { method:'POST', body:{ subject, body:{ contentType:'HTML', content:mine }, toRecipients:to.map(a => ({ emailAddress:{ address:a } })) } });
+    } else {
+      msgEl.textContent = 'Creating reply…';
+      draft = await graph(`/me/messages/${encodeURIComponent(tgt.id)}/${mode === 'all' ? 'createReplyAll' : 'createReply'}`, { method:'POST', body:{} });
+      const old = (draft.body && draft.body.content) || '';
+      const merged = /<body[^>]*>/i.test(old) ? old.replace(/<body[^>]*>/i, m => m + mine + '<br>') : mine + '<br>' + old;
+      await graph(`/me/messages/${encodeURIComponent(draft.id)}`, { method:'PATCH', body:{ body:{ contentType:'HTML', content:merged } } });
+    }
+    for (const f of c.files) { msgEl.textContent = `Attaching ${f.name}…`; await addAttachment(draft.id, f.name, new Uint8Array(await f.arrayBuffer()), null, f.type || 'application/octet-stream'); }
+    msgEl.textContent = 'Sending…';
+    await graph(`/me/messages/${encodeURIComponent(draft.id)}/send`, { method:'POST' });
+    if (draft.conversationId && !thConvs(root).includes(draft.conversationId)) { root.mailConvs = (root.mailConvs || []).concat(draft.conversationId).slice(-10); root.updated = Date.now(); saveRecs(); }
+    draft = null;
+    thComp[root.id] = { mode:'reply', target:'', text:'', files:[] };
+    toast('Email sent');
+    setTimeout(() => { if (profId === root.id) loadThread(root, true); }, 2500);
+    loadThread(root, true);
+  } catch (err) {
+    if (draft) { try { await graph(`/me/messages/${encodeURIComponent(draft.id)}`, { method:'DELETE' }); } catch (e2) {} }
+    msgEl.textContent = 'Not sent: ' + authError(err); btn.disabled = false;
+  }
+}
+async function thDownload(msgId, attId, name) {
+  try {
+    const token = await getToken(false, SCOPE_SETS.mailRead);
+    const r = await fetch(`https://graph.microsoft.com/v1.0/me/messages/${encodeURIComponent(msgId)}/attachments/${encodeURIComponent(attId)}/$value`, { headers:{ Authorization:'Bearer ' + token } });
+    if (!r.ok) throw new Error('Outlook error ' + r.status);
+    const url = URL.createObjectURL(await r.blob()), a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) { toast('Couldn’t open the attachment: ' + e.message); }
+}
+$('profile').addEventListener('click', e => {
+  const root = recs.find(r => r.id === profId); if (!root || !e.target.closest('#thBox')) return;
+  const c = thComp[root.id] || (thComp[root.id] = { mode:'reply', target:'', text:'', files:[] });
+  const ta = document.querySelector('#thBox [data-thtext]'); if (ta) c.text = ta.value;
+  const toI = document.querySelector('#thBox [data-thto]'); if (toI) c.to = toI.value;
+  const sI = document.querySelector('#thBox [data-thsubj]'); if (sI) c.subject = sI.value;
+  let t;
+  if (e.target.closest('[data-threfresh]')) return loadThread(root, true);
+  if ((t = e.target.closest('[data-thmode]'))) { c.mode = t.dataset.thmode; return renderThread(); }
+  if ((t = e.target.closest('[data-emreply],[data-emreplyall]'))) {
+    c.target = t.dataset.emreply || t.dataset.emreplyall; c.mode = t.dataset.emreplyall ? 'all' : 'reply';
+    renderThread(); const nt = document.querySelector('#thBox [data-thtext]'); nt.scrollIntoView({ block:'center', behavior:'smooth' }); nt.focus(); return;
+  }
+  if ((t = e.target.closest('[data-thfdel]'))) { c.files.splice(+t.dataset.thfdel, 1); return renderThread(); }
+  if ((t = e.target.closest('[data-ematt]'))) return thDownload(t.closest('[data-emid]').dataset.emid, t.dataset.ematt, t.dataset.emattname);
+  if (e.target.closest('[data-thsend]')) return thSend(root);
+  if (e.target.closest('[data-emtoggle]')) return openEmail(e.target.closest('[data-emid]').dataset.emid);
+});
+$('profile').addEventListener('change', e => {
+  const inp = e.target.closest('[data-thfile]'); if (!inp) return;
+  const root = recs.find(r => r.id === profId); if (!root) return;
+  const c = thComp[root.id]; const ta = document.querySelector('#thBox [data-thtext]'); if (ta) c.text = ta.value;
+  c.files.push(...inp.files); renderThread();
+});
+['dragenter', 'dragover'].forEach(ev => $('profile').addEventListener(ev, e => { const b = e.target.closest('[data-thcomp]'); if (!b || ![...e.dataTransfer.types].includes('Files')) return; e.preventDefault(); b.classList.add('over'); }));
+$('profile').addEventListener('dragleave', e => { const b = e.target.closest('[data-thcomp]'); if (b && !b.contains(e.relatedTarget)) b.classList.remove('over'); });
+$('profile').addEventListener('drop', e => {
+  const b = e.target.closest('[data-thcomp]'); if (!b || !e.dataTransfer.files.length) return; e.preventDefault();
+  const root = recs.find(r => r.id === profId); const c = thComp[root.id]; const ta = b.querySelector('[data-thtext]'); if (ta) c.text = ta.value;
+  c.files.push(...e.dataTransfer.files); renderThread();
+});
 // ---------- follow-up emails ----------
 const FU_DAYS = { off:0, '3d':3, '1w':7, '2w':14, '1m':30 };
 const FU_LABEL = { off:'Off', '3d':'Every 3 days', '1w':'Weekly', '2w':'Every 2 weeks', '1m':'Monthly' };
@@ -2132,7 +2410,7 @@ function route() {
   if (location.hash === '#rates' && cloud.office && priceBook) { if (viewRep) leaveRep(); return showRates(); }
   if (location.hash === '#stats' && cloud.office) { if (viewRep) leaveRep(); return showStats(); }
   if (location.hash === '#map') { if (viewRep) leaveRep(); return showMap(); }
-  if (location.hash === '#repairs' && cloud.office && !asRep && !PRACTICE) { if (viewRep) leaveRep(); return showRepairs(); }
+  if (location.hash === '#repairs' && ((cloud.office && !asRep) || PRACTICE)) { if (viewRep) leaveRep(); return showRepairs(); }
   const m = location.hash.match(/^#q-([a-z0-9]+)$/);
   const r = m && recs.find(x => x.id === m[1]);
   if (r) openEditor(r); else showList();
@@ -2289,6 +2567,7 @@ function openProfile(rootId) {
   if (jobUnseen(fam)) { fam.forEach(x => { x.unseen = 0; }); saveRecs(); }
   $('profBack').hidden = false; $('profile').hidden = false;
   renderProfile();
+  loadThread(root);
   if (!$('listView').hidden) renderList();
   updateTitle();
   setTimeout(() => { const x = $('profile').querySelector('.x'); if (x) x.focus(); }, 30);
@@ -2354,11 +2633,13 @@ function renderProfile() {
           return `<div class="${r === latest ? 'curv' : ''}"><b>${esc(displayRef(r.data) || '—')}</b><span>${s ? 'Sent ' + fmtD(s.at) : 'Not sent'} · ${priceSpan(r.data)}</span>${tag}<button class="btn sm" type="button" data-openrec="${r.id}">Open</button></div>`;
         }).join('')}</div>
       </div>
+      <div class="th-box" id="thBox"></div>
       <div>
         <div class="lbl">Activity</div>
         <div class="tl">${events.slice(0, 14).map(e => `<div><span>${fmtD(e.at)} ${new Date(e.at).toLocaleTimeString('en-IE', { hour:'2-digit', minute:'2-digit' })}</span><i class="${e.k}"></i><span>${e.t}</span></div>`).join('') || '<p class="hint">Nothing sent or received yet.</p>'}</div>
       </div>
     </div>`;
+  renderThread();
 }
 $('profile').addEventListener('click', e => {
   const root = recs.find(r => r.id === profId); if (!root) return;
@@ -2377,6 +2658,13 @@ $('profile').addEventListener('click', e => {
 $('profile').addEventListener('input', e => {
   const root = recs.find(r => r.id === profId); if (!root) return;
   if (outcomeExtraInput(e, root)) { if (cur) renderStatus(); return; }
+  if (e.target.closest('#thBox')) {
+    const c = thComp[root.id] || (thComp[root.id] = { mode:'reply', target:'', text:'', files:[] });
+    if (e.target.matches('[data-thtext]')) c.text = e.target.value;
+    if (e.target.matches('[data-thto]')) c.to = e.target.value;
+    if (e.target.matches('[data-thsubj]')) c.subject = e.target.value;
+    return;
+  }
   const k = e.target.dataset.fu; if (!k) return;
   const fu = fuOf(root);
   fu[k] = e.target.type === 'checkbox' ? e.target.checked : (k === 'max' ? +e.target.value : e.target.value);
@@ -2796,7 +3084,7 @@ function renderTabs() {
   t.querySelector('[data-view="reps"]').hidden = !off;
   t.querySelector('[data-view="rates"]').hidden = !off || !priceBook;
   t.querySelector('[data-view="stats"]').hidden = !off;
-  t.querySelector('[data-view="repairs"]').hidden = !off || PRACTICE;
+  t.querySelector('[data-view="repairs"]').hidden = !(off || PRACTICE);
   t.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
 }
 $('vtabs').addEventListener('click', e => {
@@ -3670,8 +3958,9 @@ let repairs = null, rpFilter = 'open', rpEdit = null, rpBusy = false, repairsEma
 const isoToday = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const isoOf = t => { if (!t) return ''; const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const dmy = iso => iso ? iso.split('-').reverse().join('/') : '';
+const repStore = { read:async () => PRACTICE ? store.get('sdw-demo-repairs', null) : readPath(REPAIRS_PATH), write:async v => PRACTICE ? store.set('sdw-demo-repairs', v) : putPath(REPAIRS_PATH, v) };
 async function loadRepairs() {
-  const j = await readPath(REPAIRS_PATH);
+  const j = await repStore.read();
   repairs = (j && Array.isArray(j.sheets)) ? j.sheets : [];
   repairsEmail = (j && j.email) || '';
 }
@@ -3707,7 +3996,7 @@ function renderRepairs() {
   $('rpWon').innerHTML = jobs.length ? `<table class="ql rp-tbl"><thead><tr><th>Job no.</th><th>Client</th><th>Rep</th><th>Won</th><th style="text-align:right">Price (excl. VAT)</th><th>Job sheet</th><th>Repairs</th><th></th></tr></thead><tbody>${jobs.map(j => {
     const a = String(j.d.clientAddress || '').split('\n').map(x => x.trim()).filter(Boolean);
     const mine = repairs.filter(r => r.jobId === j.id), open = mine.filter(r => r.status !== 'done').length;
-    return `<tr><td><b>${esc(displayRef(j.latest.data))}</b></td><td><b>${esc(j.d.client || '(no name)')}</b><small class="rp-sub">${esc(a.join(', '))}</small></td><td>${esc(j.s.name)}</td><td>${j.at ? fmtD(j.at) : '—'}</td><td style="text-align:right">${stMoney(j.price)}</td><td>${(j.root.jobSheets || []).length ? j.root.jobSheets.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener" class="rp-js">${esc(f.name)}</a>`).join('') : '<span class="nojs">⚠ Not uploaded</span>'}</td><td>${mine.length ? `${mine.length} sheet${mine.length === 1 ? '' : 's'}${open ? ` · <span class="rp-open">${open} open</span>` : ''}` : '<span class="hint">—</span>'}</td><td class="rp-acts"><button type="button" class="btn primary sm" data-rpnew="${esc(j.id)}">+ Repair sheet</button></td></tr>`;
+    return `<tr><td><b>${esc(displayRef(j.latest.data))}</b></td><td><b>${esc(j.d.client || '(no name)')}</b><small class="rp-sub">${esc(a.join(', '))}</small></td><td>${esc(j.s.name)}</td><td>${j.at ? fmtD(j.at) : '—'}</td><td style="text-align:right">${stMoney(j.price)}</td><td>${jobSheetsOf(j.root).length ? jobSheetsOf(j.root).map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener" class="rp-js">${esc(f.name)}</a>`).join('') : '<span class="nojs">⚠ Not uploaded</span>'}</td><td>${mine.length ? `${mine.length} sheet${mine.length === 1 ? '' : 's'}${open ? ` · <span class="rp-open">${open} open</span>` : ''}` : '<span class="hint">—</span>'}</td><td class="rp-acts"><button type="button" class="btn primary sm" data-rpnew="${esc(j.id)}">+ Repair sheet</button></td></tr>`;
   }).join('')}</tbody></table>` : `<p class="hint rp-empty">${q ? 'No won jobs match.' : 'No won jobs yet. Jobs show up here as soon as a quote is marked Won.'}</p>`;
 }
 function showRepairs() {
@@ -3716,7 +4005,7 @@ function showRepairs() {
   $('editView').hidden = true; $('editLeft').hidden = true; $('editActions').hidden = true;
   $('listView').hidden = true; $('listActions').hidden = true; $('repsView').hidden = true; $('ratesView').hidden = true; $('statsView').hidden = true; $('mapView').hidden = true; $('repairsView').hidden = false;
   renderRepairs();
-  const jobs = cloud.folders.some(f => f !== cloud.mine) ? showRepsData() : Promise.resolve();
+  const jobs = !PRACTICE && cloud.office && cloud.folders.some(f => f !== cloud.mine) ? showRepsData() : Promise.resolve();
   Promise.all([loadRepairs(), jobs]).then(renderRepairs).catch(e => { $('rpSheets').innerHTML = `<p class="err" style="padding:12px">Couldn’t load the repair sheets: ${esc(e.message)}</p>`; });
 }
 function openRepair(sheet) {
@@ -3739,10 +4028,10 @@ function readRepairForm() {
 }
 async function writeRepairs(change, newEmail) {
   // read the latest copy first so two people saving at once don't wipe each other's sheets
-  const j = await readPath(REPAIRS_PATH), list = (j && Array.isArray(j.sheets)) ? j.sheets : [];
+  const j = await repStore.read(), list = (j && Array.isArray(j.sheets)) ? j.sheets : [];
   change(list);
   const email = newEmail || (j && j.email) || '';
-  await putPath(REPAIRS_PATH, email ? { email, sheets:list } : { sheets:list });
+  await repStore.write(email ? { email, sheets:list } : { sheets:list });
   repairs = list; repairsEmail = email;
 }
 function newRepairFor(j) {
@@ -3867,7 +4156,7 @@ function loadPdfJs() {
 const jobOfSheet = s => s.jobId ? wonJobs().find(j => j.id === s.jobId) : null;
 function renderRpJS() {
   const box = $('rpJS'), btn = $('rpInc'), s = rpEdit; if (!s) return;
-  const j = jobOfSheet(s), avail = j ? (j.root.jobSheets || []) : [], inc = s.jobSheets || [];
+  const j = jobOfSheet(s), avail = j ? jobSheetsOf(j.root) : [], inc = s.jobSheets || [];
   btn.hidden = !s.jobId;
   $('rpView').hidden = false;
   const phN = (s.photos || []).length;
@@ -3914,7 +4203,7 @@ async function jobSheetPages(files) {
 $('rpInc').onclick = () => {
   const s = rpEdit; if (!s) return;
   if ((s.jobSheets || []).length) { s.jobSheets = []; renderRpJS(); return; }
-  const j = jobOfSheet(s), avail = j ? (j.root.jobSheets || []) : [];
+  const j = jobOfSheet(s), avail = j ? jobSheetsOf(j.root) : [];
   if (!avail.length) { toast('No job sheet uploaded for this job yet'); renderRpJS(); return; }
   s.jobSheets = avail.map(f => ({ id:f.id, name:f.name, url:f.url, size:f.size }));
   renderRpJS();
@@ -3925,7 +4214,7 @@ const REPAIRS_EMAIL_STD = 'repairssdw@gmail.com';
 let ovFiles = [], ovIdx = 0, ovBusy = false;
 const ovPageCache = {};
 function ovAvail(s) {
-  const inc = s.jobSheets || [], j = jobOfSheet(s), avail = j ? (j.root.jobSheets || []) : [];
+  const inc = s.jobSheets || [], j = jobOfSheet(s), avail = j ? jobSheetsOf(j.root) : [];
   return (inc.length ? inc : avail).map(f => ({ id:f.id, name:f.name, url:f.url, size:f.size, temp:f.temp }));
 }
 function ovDefaultText(s) {
@@ -3995,6 +4284,13 @@ $('ovSend').addEventListener('submit', async e => {
   const to = splitAddrs($('ovTo').value), btn = $('ovGo');
   $('ovErr').textContent = '';
   if (!to.length || to.some(a => !validEmail(a))) { $('ovErr').textContent = 'Check the email address.'; return; }
+  if (PRACTICE) {
+    const s = readRepairForm(); s.jobSheets = ovFiles.map(f => ({ id:f.id, name:f.name, url:f.url, size:f.size, temp:f.temp }));
+    s.sent = (s.sent || []).concat({ at:Date.now(), to:to.join('; ') + ' (practice, not really sent)', by:'' });
+    await writeRepairs(list => { const i = list.findIndex(r => r.id === s.id); if (i >= 0) list[i] = s; else list.push(s); });
+    rpEdit = s; $('rpDel').hidden = false; renderRpJS(); $('ovModal').hidden = true;
+    toast('Practice: nothing was really sent'); renderRepairs(); return;
+  }
   if (!account && !(await signIn())) { $('ovErr').textContent = 'Connect Outlook to send.'; return; }
   ovBusy = true; btn.disabled = true;
   let draft = null;
@@ -4076,8 +4372,12 @@ async function addOrderPhotos(files) {
   const s = rpEdit; if (!s) return;
   files = [...files].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|heic|webp|gif|bmp)$/i.test(f.name));
   if (!files.length) return toast('Only photos can be added here');
-  if (!cloud.driveId) return toast('Sign in to SharePoint first');
+  if (!cloud.driveId && !PRACTICE) return toast('Sign in to SharePoint first');
   const msg = $('ovPhMsg');
+  if (PRACTICE) {
+    for (const f0 of files) { const f = await shrinkPhoto(f0), id = 'tmp' + Date.now() + Math.random().toString(36).slice(2, 6), url = URL.createObjectURL(f); phThumbs[id] = url; s.photos = (s.photos || []).concat({ id, name:f.name, url, size:f.size, at:Date.now(), temp:true }); }
+    renderOvPhotos(); renderRpJS(); toast('Practice: photos are kept until you close the page'); return;
+  }
   try {
     for (let i = 0; i < files.length; i++) {
       msg.textContent = `Uploading ${i + 1} of ${files.length}…`;
@@ -4107,7 +4407,7 @@ $('ovPhotos').addEventListener('click', async e => {
   if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = '?'; b.title = 'Click again to remove'; setTimeout(() => { if (b.isConnected) { b.dataset.sure = ''; b.textContent = '✕'; } }, 3000); return; }
   const s = rpEdit, f = s.photos[+b.dataset.phdel];
   try {
-    if (f.id && cloud.driveId) { try { await graph(`/drives/${cloud.driveId}/items/${f.id}`, { method:'DELETE' }); } catch (e2) { if (e2.status !== 404) throw e2; } }
+    if (f.id && cloud.driveId && !f.temp) { try { await graph(`/drives/${cloud.driveId}/items/${f.id}`, { method:'DELETE' }); } catch (e2) { if (e2.status !== 404) throw e2; } }
     s.photos.splice(+b.dataset.phdel, 1);
     if ((repairs || []).some(r => r.id === s.id)) await writeRepairs(list => { const i = list.findIndex(r => r.id === s.id); if (i >= 0) list[i].photos = s.photos.map(({ loading, ...x }) => x); });
     renderOvPhotos(); renderRpJS(); toast('Photo removed');
@@ -4326,8 +4626,28 @@ function updateBroTotal() {
   else { cls = 'red'; msg = `About ${fmtMB(plan.total)}, which is over ${settings.maxMB} MB. Untick a brochure, remove photos, or allow separate emails.`; }
   m.className = 'meter ' + cls;
   $('broTotal').textContent = msg;
-  $('sendGo').disabled = !!plan.tooBig.length || (plan.emails.length > 1 && !split);
+  $('sendGo').disabled = !!plan.tooBig.length || (plan.emails.length > 1 && !split) || !$('sfFreq').value;
+  $('sendGo').title = !$('sfFreq').value ? 'Choose a follow-up first' : '';
 }
+function sfNextText() {
+  const f = $('sfFreq').value;
+  $('sendFu').classList.toggle('need', !f);
+  if (!f) return 'Pick how often to follow up (or Off) before you can send.';
+  if (f === 'off') return 'No follow-up emails for this quote.';
+  const d = new Date(); d.setDate(d.getDate() + FU_DAYS[f]); d.setHours(9, 0, 0, 0);
+  return `First follow-up: ${d.toLocaleDateString('en-IE', { weekday:'long', day:'2-digit', month:'2-digit' })} at 09:00, if they haven’t replied. Then ${FU_LABEL[f].toLowerCase()}, up to ${$('sfMax').value} follow-up${$('sfMax').value === '1' ? '' : 's'}.`;
+}
+function openSendFu() {
+  const fam = familyOf(cur), root = fam[0], fu = fuOf(root), st = fuState(fam);
+  // a first send, or follow-ups paused because they replied: the rep has to choose again
+  const pick = !jobSends(fam).length || st.state === 'paused' ? '' : fu.freq;
+  $('sfFreq').innerHTML = `<option value="" ${pick ? '' : 'selected'} disabled>Choose…</option>` + Object.keys(FU_DAYS).map(k => `<option value="${k}" ${pick === k ? 'selected' : ''}>${FU_LABEL[k]}</option>`).join('');
+  $('sfMax').innerHTML = [1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${fu.max === n ? 'selected' : ''}>${n} follow-up${n === 1 ? '' : 's'}</option>`).join('');
+  $('sfStop').checked = fu.stopOnReply;
+  $('sfMsg').value = fu.msg || fill(settings.fuMsg, q);
+  $('sfNext').textContent = (st.state === 'paused' ? 'They replied, so follow-ups were paused. ' : '') + sfNextText();
+}
+['sfFreq', 'sfMax'].forEach(id => $(id).addEventListener('change', () => { $('sfNext').textContent = sfNextText(); updateBroTotal(); }));
 $('broList').addEventListener('change', updateBroTotal);
 $('splitOk').addEventListener('change', updateBroTotal);
 $('shrinkPhotos').addEventListener('change', () => { renderFileList(); updateBroTotal(); });
@@ -4430,6 +4750,7 @@ $('sendBtn').onclick = () => {
   if (sigOn) $('sigPrev').innerHTML = emailSig(q);
   $('sendAttach').textContent = pdfName();
   clearFiles();
+  openSendFu();
   renderBroList(cur.broTicked || suggestedBrochures(q));
   $('sendErr').hidden = true;
   const last = cur.sends[cur.sends.length - 1];
@@ -4447,6 +4768,7 @@ $('sendForm').onsubmit = async e => {
   const bad = [...to, ...cc].find(a => !validEmail(a));
   if (bad) return showErr(`“${bad}” is not a valid email address.`);
   if (!$('sendSubject').value.trim()) return showErr('Add a subject.');
+  if (!$('sfFreq').value) { $('sendFu').scrollIntoView({ block:'center', behavior:'smooth' }); $('sfFreq').focus(); return showErr('Choose a follow-up (or Off) before sending.'); }
   if (PRACTICE) return showErr('This is the practice version, so emails can’t be sent. Use the real quote manager to send quotes.');
   if (!account && !(await signIn())) return showErr('Connect Outlook to send.');
   const bros = chosenBrochures();
@@ -4496,6 +4818,8 @@ $('sendForm').onsubmit = async e => {
     made.forEach(m => cur.sends.push({ at:Date.now(), to:to.join('; '), cc:cc.join('; '), subject:m.subject, conversationId:m.draft.conversationId,
       brochures:m.items.filter(i => i.bro).map(i => i.bro), files:m.items.filter(i => i.photo).map(i => i.photo) }));
     clearFiles();
+    { const root = familyOf(cur)[0], std = fill(settings.fuMsg, q), m = $('sfMsg').value.trim();
+      root.fu = { freq:$('sfFreq').value, max:+$('sfMax').value, stopOnReply:$('sfStop').checked, msg:m && m !== std.trim() ? $('sfMsg').value : '' }; root.updated = Date.now(); }
     if (!q.clientEmail) { q.clientEmail = to[0]; $('clientEmail').value = to[0]; }
     cur.updated = Date.now(); saveRecs();
     $('sendModal').hidden = true; renderStatus();
