@@ -283,8 +283,9 @@ table.calc td.c { text-align:center; }
 .revbanner button { font:inherit; font-weight:700; color:var(--navy); background:none; border:none; padding:0; text-decoration:underline; cursor:pointer; }
 .btn.white { background:#fff; color:var(--navy); border-color:#fff; }
 /* customer profile */
-.drawer-back { position:fixed; inset:0; background:rgba(14,18,56,.35); z-index:20; }
-.drawer { position:fixed; top:0; right:0; bottom:0; width:min(580px, 100%); background:#fff; box-shadow:-12px 0 30px rgba(0,0,0,.18); overflow-y:auto; z-index:21; padding-bottom:env(safe-area-inset-bottom, 0px); }
+.drawer-back { position:fixed; inset:0; background:rgba(14,18,56,.45); z-index:20; }
+.drawer { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:min(720px, calc(100% - 32px)); max-height:min(92vh, 1000px); background:#fff; border-radius:12px; box-shadow:0 24px 60px rgba(0,0,0,.28); overflow-y:auto; z-index:21; padding-bottom:env(safe-area-inset-bottom, 0px); }
+@media (max-width:600px) { .drawer { top:0; left:0; transform:none; width:100%; max-height:none; height:100%; border-radius:0; } }
 .dhead { position:relative; padding:18px 22px 14px; border-bottom:1px solid var(--line); }
 .dhead .x { position:absolute; right:14px; top:12px; font-size:18px; color:var(--muted); background:none; border:none; cursor:pointer; padding:6px; }
 .dhead h2 { font-size:21px; color:var(--navy); margin:0; }
@@ -580,6 +581,35 @@ table.st-tb tr[data-strep] { cursor:pointer; } table.st-tb tr[data-strep]:hover 
 .st-mini { display:inline-block; height:8px; border-radius:0 4px 4px 0; background:#1f9e74; vertical-align:middle; margin-right:6px; }
 .st-chart svg rect:hover, .st-chart svg path:hover { opacity:.8; }
 @media (max-width:900px) { .st-tiles { grid-template-columns:repeat(2, minmax(0, 1fr)); } .st-g2, .st-g2e { grid-template-columns:1fr; } }
+.ov-modal { width:min(900px, 100%); height:92vh; grid-template-rows:auto auto auto 1fr; }
+.ov-drop { border:1.5px dashed var(--ui-line); border-radius:8px; padding:8px 10px; display:grid; gap:8px; background:var(--tint); }
+.ov-drop.over { border-color:var(--navy); background:#e7ecfa; }
+.ov-dh { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.ov-dh b { color:var(--navy); font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
+.ov-dh label { cursor:pointer; }
+.ov-phs { display:flex; gap:8px; flex-wrap:wrap; }
+.ov-phs:empty { display:none; }
+.ov-ph { position:relative; margin:0; width:76px; height:76px; border-radius:6px; overflow:hidden; background:#dde1ea; }
+.ov-ph a { display:flex; width:100%; height:100%; align-items:center; justify-content:center; font-size:24px; text-decoration:none; }
+.ov-ph img { width:100%; height:100%; object-fit:cover; }
+.ov-phx { position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%; border:0; background:rgba(0,0,0,.6); color:#fff; font-size:11px; cursor:pointer; padding:0; }
+.ov-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.ov-sp { flex:1; }
+.ov-files { display:inline-flex; gap:6px; flex-wrap:wrap; min-width:0; }
+.ov-files b { color:var(--muted); font-weight:600; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ov-files button { font:inherit; font-size:12px; border:1px solid var(--ui-line); background:var(--ui-panel); border-radius:6px; padding:3px 8px; cursor:pointer; }
+.ov-files button.on { border-color:var(--navy); color:var(--navy); font-weight:700; }
+.ov-view { overflow:auto; background:#5b5f6e; border-radius:8px; padding:12px; display:grid; gap:12px; justify-items:center; align-content:start; min-height:0; }
+.ov-view img { max-width:100%; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.35); }
+.ov-msg { color:#fff; margin:30px 0; }
+.ov-msg a { color:#fff; }
+.ov-send { display:grid; gap:10px; align-content:start; overflow:auto; min-height:0; }
+.ov-send textarea { font:inherit; resize:vertical; }
+.ov-std { font-size:12.5px; color:var(--ink); display:flex !important; gap:8px; align-items:center; justify-content:flex-start; text-align:left; }
+.ov-std input { width:auto !important; margin:0; flex:none; }
+.ov-att { list-style:none; margin:4px 0 0; padding:0; display:grid; gap:3px; font-size:12.5px; }
+.rp-sent { margin-top:6px; color:#15803d; font-weight:600; }
+.rp-sentb { color:#15803d !important; }
 .nojs { display:inline-block; margin-top:3px; font:inherit; font-size:11px; font-weight:700; color:#b42318; background:#fef0ee; border:1px solid #f5c2bc; border-radius:10px; padding:1px 8px; white-space:nowrap; cursor:default; }
 button.nojs { cursor:pointer; }
 button.nojs:hover { border-color:#b42318; }
@@ -685,6 +715,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
     <span class="tabs" id="rpChips"></span>
     <input id="rpSearch" type="search" placeholder="Search client, job no., address, rep…" style="margin-left:auto;width:min(320px,100%)">
     <button type="button" class="btn" id="rpBlank">+ Blank repair sheet</button></div>
+  <p class="hint" id="rpEmailLine" style="margin:-4px 0 8px"></p>
   <div id="rpSheets"></div>
   <h3 class="rates-h3" style="margin-top:22px">Won jobs <span class="hint" style="font-weight:500">(<span id="rpWonCount">0</span>)</span></h3>
   <p class="hint" style="margin:-4px 0 8px">Every job marked Won, newest first. <b>+ Repair sheet</b> fills in the rep, client, address, phone and job number from the job.</p>
@@ -881,13 +912,36 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
     <label class="f">Repair works required<textarea id="rp_works" rows="8" placeholder="What needs fixing…"></textarea></label>
     <div class="row rp-3"><label class="f">Status<select id="rp_status"><option value="open">Open</option><option value="booked">Booked</option><option value="done">Completed</option></select></label><label class="f">Date completed<input id="rp_completed" type="date"></label><label class="f">Signed<input id="rp_signed" type="text" placeholder="Fitter / customer"></label></div>
     <div class="rp-js-inc" id="rpJS" hidden></div>
-    <div class="acts"><button type="button" class="btn x" id="rpDel">Delete</button><button type="button" class="btn" id="rpInc" style="margin-right:auto">📎 Include job sheet</button><button type="button" class="btn" id="rpPrint">Print / PDF</button><button type="button" class="btn" id="rpCancel">Cancel</button><button type="submit" class="btn primary" id="rpSave">Save</button></div>
+    <div class="acts"><button type="button" class="btn x" id="rpDel">Delete</button><button type="button" class="btn" id="rpInc">📎 Include job sheet</button><button type="button" class="btn" id="rpView" style="margin-right:auto">View order</button><button type="button" class="btn" id="rpPrint">Print / PDF</button><button type="button" class="btn" id="rpCancel">Cancel</button><button type="submit" class="btn primary" id="rpSave">Save</button></div>
   </form>
+</div>
+
+<div class="modal-back" id="ovModal" hidden>
+  <div class="modal ov-modal">
+    <div class="ov-head"><h3>View order</h3><span class="ov-files" id="ovFiles"></span>
+      <span class="ov-sp"></span><a class="btn sm" id="ovOpen" target="_blank" rel="noopener">Open in SharePoint</a><button type="button" class="btn sm" id="ovClose">Close</button></div>
+    <div class="tabs ov-tabs"><button type="button" class="on" data-ovt="order">Order</button><button type="button" data-ovt="send">✉ Send to repairs</button></div>
+    <div class="ov-drop" id="ovDrop"><div class="ov-dh"><b>Photos</b> <span class="hint" id="ovPhCount"></span>
+      <label class="btn sm">📷 Add photos<input type="file" id="ovPhIn" accept="image/*" multiple hidden></label>
+      <span class="hint">or drag and drop photos anywhere here</span><span class="hint" id="ovPhMsg"></span></div>
+      <div class="ov-phs" id="ovPhotos"></div></div>
+    <div class="ov-view" id="ovView"></div>
+    <form class="ov-send" id="ovSend" hidden novalidate>
+      <label class="f">To<input id="ovTo" type="text" autocomplete="off"></label>
+      <label class="ov-std" id="ovStdRow" hidden><input type="checkbox" id="ovStd"><span>Make this the standard repairs email from now on (instead of <b id="ovStdNow"></b>)</span></label>
+      <label class="f">Subject<input id="ovSubj" type="text"></label>
+      <label class="f">Message<textarea id="ovMsg" rows="12"></textarea></label>
+      <div class="f"><b style="font-size:12px;color:var(--muted)">Attached</b><ul class="ov-att" id="ovAtt"></ul></div>
+      <p class="hint" id="ovLast" style="margin:0"></p>
+      <p class="err" id="ovErr" style="margin:0"></p>
+      <div class="acts"><button type="submit" class="btn primary" id="ovGo">Send to repairs</button></div>
+    </form>
+  </div>
 </div>
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · repairs 2</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · repairs 4</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -3612,13 +3666,14 @@ $('mapKeySave').onclick = async () => {
 // =====================================================================
 const REPAIRS_PATH = '_office/repairs.json';
 const RP_ST = { open:['Open', '#b45309'], booked:['Booked', '#1d4ed8'], done:['Completed', '#15803d'] };
-let repairs = null, rpFilter = 'open', rpEdit = null, rpBusy = false;
+let repairs = null, rpFilter = 'open', rpEdit = null, rpBusy = false, repairsEmail = '';
 const isoToday = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const isoOf = t => { if (!t) return ''; const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const dmy = iso => iso ? iso.split('-').reverse().join('/') : '';
 async function loadRepairs() {
   const j = await readPath(REPAIRS_PATH);
   repairs = (j && Array.isArray(j.sheets)) ? j.sheets : [];
+  repairsEmail = (j && j.email) || '';
 }
 function wonJobs() {
   const out = [];
@@ -3636,6 +3691,7 @@ function wonJobs() {
 function renderRepairs() {
   if (view !== 'repairs') return;
   if (!repairs) { $('rpSheets').innerHTML = '<p class="hint" style="padding:12px">Loading repair sheets from SharePoint…</p>'; return; }
+  $('rpEmailLine').innerHTML = `Repairs email: <b>${esc(repairsEmail || REPAIRS_EMAIL_STD)}</b>. Open a repair sheet, then View order → Send to repairs. You can change the address there.`;
   const q = $('rpSearch').value.trim().toLowerCase();
   const hit = (...xs) => !q || xs.join(' ').toLowerCase().includes(q);
   const counts = { open:0, booked:0, done:0 }; repairs.forEach(r => counts[r.status || 'open']++);
@@ -3644,7 +3700,7 @@ function renderRepairs() {
     .sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.created || 0) - (a.created || 0));
   $('rpSheets').innerHTML = list.length ? `<table class="ql rp-tbl"><thead><tr><th>Status</th><th>Date</th><th>Job no.</th><th>Client</th><th>Rep</th><th>Repair works required</th><th></th></tr></thead><tbody>${list.map(r => {
     const st = RP_ST[r.status || 'open'], town = String(r.address || '').split('\n').map(x => x.trim()).filter(Boolean).slice(-2).join(', ');
-    return `<tr data-rpopen="${esc(r.id)}" class="rp-row"><td><span class="rp-st" style="--c:${st[1]}">${st[0]}</span>${r.status === 'done' && r.completed ? `<small class="rp-sub">${dmy(r.completed)}</small>` : ''}</td><td>${dmy(r.date)}</td><td><b>${esc(r.jobNo || '—')}</b></td><td><b>${esc(r.client || '(no name)')}</b><small class="rp-sub">${esc(town)}</small></td><td>${esc(r.rep || '')}</td><td class="rp-works">${esc((r.works || '').slice(0, 140))}${(r.works || '').length > 140 ? '…' : ''}</td><td class="rp-acts"><button type="button" class="btn sm" data-rpprint="${esc(r.id)}">Print</button></td></tr>`;
+    return `<tr data-rpopen="${esc(r.id)}" class="rp-row"><td><span class="rp-st" style="--c:${st[1]}">${st[0]}</span>${r.status === 'done' && r.completed ? `<small class="rp-sub">${dmy(r.completed)}</small>` : ''}${(r.sent || []).length ? `<small class="rp-sub rp-sentb">✓ Sent to repairs ${fmtD(r.sent[r.sent.length - 1].at)}</small>` : ''}</td><td>${dmy(r.date)}</td><td><b>${esc(r.jobNo || '—')}</b></td><td><b>${esc(r.client || '(no name)')}</b><small class="rp-sub">${esc(town)}</small></td><td>${esc(r.rep || '')}</td><td class="rp-works">${esc((r.works || '').slice(0, 140))}${(r.works || '').length > 140 ? '…' : ''}</td><td class="rp-acts"><button type="button" class="btn sm" data-rpprint="${esc(r.id)}">Print</button></td></tr>`;
   }).join('')}</tbody></table>` : `<p class="hint rp-empty">${repairs.length ? 'No repair sheets match.' : 'No repair sheets yet. Use the Repair sheet button beside a won job below.'}</p>`;
   const jobs = wonJobs().filter(j => hit(j.d.client, j.d.clientAddress, displayRef(j.latest.data), j.s.name, j.d.jobRef));
   $('rpWonCount').textContent = jobs.length;
@@ -3677,15 +3733,17 @@ function readRepairForm() {
   ['rep', 'date', 'client', 'address', 'phone', 'jobNo', 'po', 'installDate', 'works', 'completed', 'signed', 'status'].forEach(n => { s[n] = String(f(n)).trim(); });
   if (s.status === 'done' && !s.completed) s.completed = isoToday();
   if (s.completed && s.status !== 'done') s.status = 'done';
+  if (s.photos) s.photos = s.photos.map(({ loading, ...x }) => x);
   s.updated = Date.now(); s.updatedBy = cloud.me || '';
   return s;
 }
-async function writeRepairs(change) {
+async function writeRepairs(change, newEmail) {
   // read the latest copy first so two people saving at once don't wipe each other's sheets
   const j = await readPath(REPAIRS_PATH), list = (j && Array.isArray(j.sheets)) ? j.sheets : [];
   change(list);
-  await putPath(REPAIRS_PATH, { sheets:list });
-  repairs = list;
+  const email = newEmail || (j && j.email) || '';
+  await putPath(REPAIRS_PATH, email ? { email, sheets:list } : { sheets:list });
+  repairs = list; repairsEmail = email;
 }
 function newRepairFor(j) {
   const d = j ? j.d : {};
@@ -3737,9 +3795,10 @@ function repairSheetHTML(s) {
 }
 async function printRepair(s) {
   let html = repairSheetHTML(s);
-  if ((s.jobSheets || []).length) {
-    toast('Getting the job sheet ready to print…');
-    const pages = await jobSheetPages(s.jobSheets);
+  const printFiles = (s.jobSheets || []).concat(s.photos || []);
+  if (printFiles.length) {
+    toast('Getting the order and photos ready to print…');
+    const pages = await jobSheetPages(printFiles);
     html = html.replace('</body>', pages.map(p => p.img ? `<div class="jsp"><img src="${p.img}" alt="${esc(p.name)}"></div>` : `<div class="jsp note">${esc(p.note)}</div>`).join('') + '</body>');
   }
   let fr = $('rpPrintFrame');
@@ -3810,12 +3869,18 @@ function renderRpJS() {
   const box = $('rpJS'), btn = $('rpInc'), s = rpEdit; if (!s) return;
   const j = jobOfSheet(s), avail = j ? (j.root.jobSheets || []) : [], inc = s.jobSheets || [];
   btn.hidden = !s.jobId;
+  $('rpView').hidden = false;
+  const phN = (s.photos || []).length;
+  const last = (s.sent || [])[(s.sent || []).length - 1];
+  const sentLine = last ? `<div class="rp-sent">✓ Sent to repairs ${fmtDT(last.at)} · ${esc(last.to)}</div>` : '';
   btn.textContent = inc.length ? 'Remove job sheet' : '📎 Include job sheet';
-  if (!s.jobId) { box.innerHTML = ''; box.hidden = true; return; }
+  const phLine = phN ? `<div class="rp-sent" style="color:var(--navy)">📷 ${phN} photo${phN === 1 ? '' : 's'} added (in View order)</div>` : '';
+  if (!s.jobId) { box.innerHTML = phLine + sentLine; box.hidden = !(phLine || sentLine); return; }
   box.hidden = false;
   if (inc.length) box.innerHTML = `<b>Job sheet included</b> (prints after the repair sheet): ${inc.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a>`).join(', ')}`;
   else if (avail.length) box.innerHTML = `Job sheet on file: ${avail.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a>`).join(', ')}. Click <b>Include job sheet</b> to add it to this repair sheet.`;
   else box.innerHTML = `<span class="nojs">⚠ Job sheet not uploaded</span> ${esc(s.rep || 'The rep')} hasn’t uploaded the job sheet for this job yet.`;
+  box.innerHTML += phLine + sentLine;
 }
 async function fileBlob(f) {
   if (f.temp || !f.id) return (await fetch(f.url)).blob();
@@ -3854,6 +3919,200 @@ $('rpInc').onclick = () => {
   s.jobSheets = avail.map(f => ({ id:f.id, name:f.name, url:f.url, size:f.size }));
   renderRpJS();
 };
+
+// ---------- View order (the job sheet the rep uploaded) + Send to repairs ----------
+const REPAIRS_EMAIL_STD = 'repairssdw@gmail.com';
+let ovFiles = [], ovIdx = 0, ovBusy = false;
+const ovPageCache = {};
+function ovAvail(s) {
+  const inc = s.jobSheets || [], j = jobOfSheet(s), avail = j ? (j.root.jobSheets || []) : [];
+  return (inc.length ? inc : avail).map(f => ({ id:f.id, name:f.name, url:f.url, size:f.size, temp:f.temp }));
+}
+function ovDefaultText(s) {
+  const addr = String(s.address || '').split('\n').map(x => x.trim()).filter(Boolean).join(', ');
+  return `Hi,\n\nPlease see the repair below.\n\nClient: ${s.client || ''}${s.phone ? '\nPhone: ' + s.phone : ''}${addr ? '\nAddress: ' + addr : ''}\nJob no.: ${s.jobNo || ''}${s.po ? '\nP.O. number: ' + s.po : ''}${s.installDate ? '\nInstalled: ' + dmy(s.installDate) : ''}\nRep: ${s.rep || ''}\n\nRepair works required:\n${s.works || '(see the repair sheet)'}\n\nThe repair sheet, the order and any photos are attached.\n\nKind regards,\n${myName || (account && account.name) || ''}\nSean Doyle Windows Ltd`;
+}
+function ovTab(t) {
+  document.querySelectorAll('#ovModal [data-ovt]').forEach(b => b.classList.toggle('on', b.dataset.ovt === t));
+  $('ovView').hidden = t !== 'order'; $('ovSend').hidden = t !== 'send';
+}
+async function ovShow(i) {
+  ovIdx = i; const f = ovFiles[i];
+  $('ovFiles').innerHTML = ovFiles.length > 1 ? ovFiles.map((x, k) => `<button type="button" class="${k === i ? 'on' : ''}" data-ovf="${k}">${esc(x.name)}</button>`).join('') : `<b>${esc(f.name)}</b>`;
+  $('ovOpen').href = f.url; $('ovOpen').hidden = !f.url || !!f.temp;
+  const key = f.id || f.url;
+  $('ovView').innerHTML = '<p class="ov-msg">Loading the order…</p>';
+  if (!ovPageCache[key]) ovPageCache[key] = jobSheetPages([f]);
+  const pages = await ovPageCache[key];
+  if (ovIdx !== i) return;
+  $('ovView').innerHTML = pages.map((p, k) => p.img ? `<img src="${p.img}" alt="${esc(f.name)} page ${k + 1}">` : `<p class="ov-msg">${esc(p.note)} <a href="${esc(f.url)}" target="_blank" rel="noopener">Open it</a></p>`).join('');
+}
+function openOrder(tab) {
+  const s = rpEdit; if (!s) return;
+  ovFiles = ovAvail(s);
+  $('ovTo').value = repairsEmail || REPAIRS_EMAIL_STD;
+  $('ovStd').checked = false; $('ovStdRow').hidden = true;
+  $('ovSubj').value = `Repair – ${s.jobNo || ''} ${s.client || ''}`.replace(/\s+/g, ' ').trim();
+  $('ovMsg').value = ovDefaultText(readRepairForm());
+  $('ovErr').textContent = ''; $('ovPhMsg').textContent = '';
+  renderOvPhotos();
+  const last = (s.sent || [])[(s.sent || []).length - 1];
+  $('ovLast').textContent = last ? `Last sent to repairs ${fmtDT(last.at)} (${last.to})` : '';
+  $('ovModal').hidden = false; ovTab(tab || 'order');
+  if (ovFiles.length) ovShow(0);
+  else { $('ovFiles').innerHTML = ''; $('ovOpen').hidden = true; $('ovView').innerHTML = `<p class="ov-msg"><span class="nojs">⚠ Job sheet not uploaded</span><br><br>${s.jobId ? esc(s.rep || 'The rep') + ' hasn’t uploaded the order for this job yet.' : 'This repair sheet isn’t linked to a won job.'} You can still add photos and send it to repairs.</p>`; }
+}
+async function repairSheetPdf(s) {
+  if (!window.html2canvas || !window.jspdf) throw new Error('The PDF tools did not load. Reload the page and try again.');
+  const fr = document.createElement('iframe');
+  fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0';
+  document.body.appendChild(fr);
+  try {
+    const doc = fr.contentDocument; doc.open(); doc.write(repairSheetHTML(s)); doc.close();
+    doc.body.style.padding = '12mm'; doc.body.style.background = '#fff';
+    await Promise.all([...doc.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+    const canvas = await html2canvas(doc.body, { scale:2, backgroundColor:'#ffffff', logging:false, windowWidth:794, windowHeight:1123 });
+    const pdf = new window.jspdf.jsPDF({ unit:'mm', format:'a4', compress:true });
+    const h = Math.min(297, canvas.height * 210 / canvas.width);
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, h);
+    pdf.setProperties({ title:'Repair Sheet ' + (s.jobNo || ''), author:'Sean Doyle Windows Ltd' });
+    return new Uint8Array(pdf.output('arraybuffer'));
+  } finally { fr.remove(); }
+}
+$('rpView').onclick = () => openOrder('order');
+$('ovClose').onclick = () => { $('ovModal').hidden = true; };
+$('ovModal').addEventListener('click', e => {
+  const t = e.target.closest('[data-ovt]'); if (t) return ovTab(t.dataset.ovt);
+  const f = e.target.closest('[data-ovf]'); if (f) return ovShow(+f.dataset.ovf);
+});
+$('ovTo').addEventListener('input', () => {
+  const v = splitAddrs($('ovTo').value).join('; ').toLowerCase();
+  $('ovStdRow').hidden = !v || v === String(repairsEmail || REPAIRS_EMAIL_STD).toLowerCase();
+  $('ovStdNow').textContent = repairsEmail || REPAIRS_EMAIL_STD;
+});
+$('ovSend').addEventListener('submit', async e => {
+  e.preventDefault(); if (ovBusy) return;
+  const to = splitAddrs($('ovTo').value), btn = $('ovGo');
+  $('ovErr').textContent = '';
+  if (!to.length || to.some(a => !validEmail(a))) { $('ovErr').textContent = 'Check the email address.'; return; }
+  if (!account && !(await signIn())) { $('ovErr').textContent = 'Connect Outlook to send.'; return; }
+  ovBusy = true; btn.disabled = true;
+  let draft = null;
+  try {
+    const s = readRepairForm();
+    s.jobSheets = ovFiles.map(f => ({ id:f.id, name:f.name, url:f.url, size:f.size }));
+    btn.textContent = 'Making the repair sheet PDF…';
+    const items = [{ name:`Repair sheet ${safeName(s.jobNo || '')} ${safeName(s.client || '')}`.trim() + '.pdf', bytes:await repairSheetPdf(s), type:'application/pdf' }];
+    for (const f of ovFiles) {
+      btn.textContent = `Getting ${f.name}…`;
+      const b = await fileBlob(f);
+      items.push({ name:f.name, bytes:new Uint8Array(await b.arrayBuffer()), type:b.type || 'application/octet-stream' });
+    }
+    for (const f of (s.photos || [])) {
+      btn.textContent = `Getting ${f.name}…`;
+      const b = await fileBlob(f);
+      items.push({ name:f.name, bytes:new Uint8Array(await b.arrayBuffer()), type:b.type || 'image/jpeg' });
+    }
+    btn.textContent = 'Creating email…';
+    draft = await graph('/me/messages', { method:'POST', body:{ subject:$('ovSubj').value.trim() || 'Repair', body:{ contentType:'HTML', content:textToHtml($('ovMsg').value, null) }, toRecipients:to.map(a => ({ emailAddress:{ address:a } })) } });
+    for (const it of items) { btn.textContent = `Attaching ${it.name}…`; await addAttachment(draft.id, it.name, it.bytes, null, it.type); }
+    btn.textContent = 'Sending…';
+    await graph(`/me/messages/${encodeURIComponent(draft.id)}/send`, { method:'POST' });
+    draft = null;
+    s.sent = (s.sent || []).concat({ at:Date.now(), to:to.join('; '), by:cloud.me || '' });
+    const std = $('ovStd').checked && !$('ovStdRow').hidden ? to.join('; ') : null;
+    btn.textContent = 'Saving…';
+    await writeRepairs(list => { const i = list.findIndex(r => r.id === s.id); if (i >= 0) list[i] = s; else list.push(s); }, std);
+    rpEdit = s; $('rpDel').hidden = false; renderRpJS();
+    $('ovModal').hidden = true;
+    toast('Sent to repairs' + (std ? ' · new standard email saved' : ''));
+    renderRepairs();
+  } catch (err) {
+    if (draft) { try { await graph(`/me/messages/${encodeURIComponent(draft.id)}`, { method:'DELETE' }); } catch (e2) {} }
+    $('ovErr').textContent = 'Not sent: ' + err.message;
+  }
+  ovBusy = false; btn.disabled = false; btn.textContent = 'Send to repairs';
+});
+
+// ---------- photos on the order (browse or drag and drop) ----------
+const phThumbs = {};   // file id -> object URL for the little previews
+async function shrinkPhoto(file) {
+  if (!/^image\/(jpeg|png|webp|bmp|gif)$/i.test(file.type) || file.size < 700 * 1024) return file;
+  try {
+    const bmp = await createImageBitmap(file), k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+    return b && b.size < file.size ? new File([b], file.name.replace(/\.\w+$/, '') + '.jpg', { type:'image/jpeg' }) : file;
+  } catch (e) { return file; }
+}
+async function uploadToSP(path, file) {
+  const enc = path.split('/').map(encodeURIComponent).join('/');
+  if (file.size <= 4 * 1024 * 1024) {
+    const token = await getToken(false, SCOPE_SETS.sites);
+    const res = await fetch(`https://graph.microsoft.com/v1.0/drives/${cloud.driveId}/root:/${enc}:/content?@microsoft.graph.conflictBehavior=rename`, { method:'PUT', headers:{ Authorization:'Bearer ' + token, 'Content-Type':file.type || 'application/octet-stream' }, body:file });
+    if (!res.ok) throw new Error('SharePoint error ' + res.status);
+    return res.json();
+  }
+  const sess = await graph(`/drives/${cloud.driveId}/root:/${enc}:/createUploadSession`, { method:'POST', body:{ item:{ '@microsoft.graph.conflictBehavior':'rename' } } });
+  let item;
+  for (let at = 0; at < file.size; at += 1638400) {
+    const end = Math.min(at + 1638400, file.size);
+    const res = await fetch(sess.uploadUrl, { method:'PUT', headers:{ 'Content-Range':`bytes ${at}-${end - 1}/${file.size}` }, body:file.slice(at, end) });
+    if (!res.ok) throw new Error('SharePoint error ' + res.status);
+    if (end === file.size) item = await res.json();
+  }
+  return item;
+}
+function renderOvPhotos() {
+  const s = rpEdit; if (!s) return;
+  const ph = s.photos || [];
+  $('ovPhotos').innerHTML = ph.map((f, i) => `<figure class="ov-ph"><a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}">${phThumbs[f.id] ? `<img src="${phThumbs[f.id]}" alt="">` : '<span>📷</span>'}</a><button type="button" class="ov-phx" data-phdel="${i}" title="Remove photo">✕</button></figure>`).join('');
+  $('ovPhCount').textContent = ph.length ? `${ph.length} photo${ph.length === 1 ? '' : 's'}` : 'No photos yet';
+  ph.forEach(f => { if (!phThumbs[f.id] && f.id && !f.loading) { f.loading = true; fileBlob(f).then(b => { phThumbs[f.id] = URL.createObjectURL(b); delete f.loading; renderOvPhotos(); }).catch(() => { delete f.loading; }); } });
+  ovAttList();
+}
+async function addOrderPhotos(files) {
+  const s = rpEdit; if (!s) return;
+  files = [...files].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|heic|webp|gif|bmp)$/i.test(f.name));
+  if (!files.length) return toast('Only photos can be added here');
+  if (!cloud.driveId) return toast('Sign in to SharePoint first');
+  const msg = $('ovPhMsg');
+  try {
+    for (let i = 0; i < files.length; i++) {
+      msg.textContent = `Uploading ${i + 1} of ${files.length}…`;
+      const f = await shrinkPhoto(files[i]);
+      const folder = safeName(s.jobNo || '') ? `${safeName(s.jobNo)} ${s.id}` : s.id;
+      const item = await uploadToSP(`_office/Repair photos/${folder}/${safeName(f.name)}`, f);
+      phThumbs[item.id] = URL.createObjectURL(f);
+      s.photos = (s.photos || []).concat({ id:item.id, name:f.name, url:item.webUrl, size:f.size, at:Date.now() });
+      renderOvPhotos();
+    }
+    msg.textContent = '';
+    if ((repairs || []).some(r => r.id === s.id)) { const cur2 = readRepairForm(); await writeRepairs(list => { const i = list.findIndex(r => r.id === s.id); if (i >= 0) list[i].photos = cur2.photos; }); }
+    toast(files.length === 1 ? 'Photo added' : files.length + ' photos added');
+    renderRpJS();
+  } catch (err) { msg.textContent = ''; toast('Upload failed: ' + err.message); }
+}
+function ovAttList() {
+  const s = rpEdit; if (!s) return;
+  $('ovAtt').innerHTML = [`Repair sheet ${esc(s.jobNo || '')}.pdf`].concat(ovFiles.map(f => esc(f.name)), (s.photos || []).map(f => '📷 ' + esc(f.name))).map(n => `<li>📎 ${n}</li>`).join('');
+}
+$('ovPhIn').addEventListener('change', e => { const f = e.target.files; if (f.length) addOrderPhotos(f); e.target.value = ''; });
+['dragenter', 'dragover'].forEach(ev => $('ovModal').addEventListener(ev, e => { if (![...e.dataTransfer.types].includes('Files')) return; e.preventDefault(); $('ovDrop').classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => $('ovModal').addEventListener(ev, e => { if (ev === 'dragleave' && $('ovModal').contains(e.relatedTarget)) return; $('ovDrop').classList.remove('over'); }));
+$('ovModal').addEventListener('drop', e => { if (!e.dataTransfer.files.length) return; e.preventDefault(); addOrderPhotos(e.dataTransfer.files); });
+$('ovPhotos').addEventListener('click', async e => {
+  const b = e.target.closest('[data-phdel]'); if (!b) return;
+  if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = '?'; b.title = 'Click again to remove'; setTimeout(() => { if (b.isConnected) { b.dataset.sure = ''; b.textContent = '✕'; } }, 3000); return; }
+  const s = rpEdit, f = s.photos[+b.dataset.phdel];
+  try {
+    if (f.id && cloud.driveId) { try { await graph(`/drives/${cloud.driveId}/items/${f.id}`, { method:'DELETE' }); } catch (e2) { if (e2.status !== 404) throw e2; } }
+    s.photos.splice(+b.dataset.phdel, 1);
+    if ((repairs || []).some(r => r.id === s.id)) await writeRepairs(list => { const i = list.findIndex(r => r.id === s.id); if (i >= 0) list[i].photos = s.photos.map(({ loading, ...x }) => x); });
+    renderOvPhotos(); renderRpJS(); toast('Photo removed');
+  } catch (err) { toast('Not removed: ' + err.message); }
+});
 
 // ---------- office: Rates tab ----------
 let savedBook = '';
