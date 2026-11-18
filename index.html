@@ -306,6 +306,10 @@ table.calc td.c { text-align:center; }
 .fubox { border:1px solid var(--ui-line); border-radius:8px; padding:11px 12px; display:grid; gap:8px; }
 .fnext { font-size:12px; background:#e1eafb; color:#1d4f9a; border-radius:6px; padding:7px 9px; font-weight:600; }
 .fnext.grey { background:var(--tint); color:var(--muted); }
+.fnext.with-btn { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.btn.resume { background:#15803d; border-color:#15803d; color:#fff; font-weight:700; }
+.btn.resume:hover { background:#116632; border-color:#116632; }
+.btn.resume:disabled { opacity:.5; cursor:default; }
 .revs { border:1px solid var(--ui-line); border-radius:8px; overflow:hidden; }
 .revs > div { display:grid; grid-template-columns:110px 1fr auto auto; gap:10px; align-items:center; padding:7px 11px; border-bottom:1px solid var(--line); font-size:12.5px; }
 .revs > div:last-child { border-bottom:none; }
@@ -1001,7 +1005,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · own emails fix</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · resume follow-ups</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2319,9 +2323,10 @@ function fuState(fam) {
   const lastSend = sends[sends.length - 1].at;
   const log = (root.fuLog || []).filter(l => l.at > lastSend && !l.pending);
   const lastRep = reps.length ? reps[reps.length - 1].at : 0;
-  if (fu.stopOnReply && lastRep > lastSend) return { state:'paused', label:'Paused · they replied' };
+  const resumed = Math.max(lastSend, fu.resumeAt || 0);   // "Resume follow-ups" after a reply restarts the clock from then
+  if (fu.stopOnReply && lastRep > resumed) return { state:'paused', label:'Paused · they replied' };
   if (log.length >= fu.max) return { state:'done', label:`All ${fu.max} sent` };
-  const base = log.length ? log[log.length - 1].at : lastSend;
+  const base = Math.max(log.length ? log[log.length - 1].at : lastSend, fu.resumeAt || 0);
   const d = new Date(base); d.setDate(d.getDate() + FU_DAYS[fu.freq]); d.setHours(9, 0, 0, 0);
   return { state:'scheduled', next:d.getTime(), sent:log.length, max:fu.max, freq:fu.freq };
 }
@@ -2623,7 +2628,7 @@ function renderProfile() {
         <label class="check"><input type="checkbox" data-fu="stopOnReply" ${fu.stopOnReply ? 'checked' : ''}> Stop automatically when they reply</label>
         <label class="f">Message<span class="micwrap"><textarea data-fu="msg" style="min-height:120px" placeholder="${esc(fill(settings.fuMsg, d))}">${esc(fu.msg)}</textarea>${MIC_HTML}</span></label>
         <p class="hint" style="margin:0">Leave the message empty to use the standard one from Settings. {first}, {ref} and {sender} are filled in for you.</p>
-        <div class="fnext ${fs.state === 'scheduled' ? '' : 'grey'}">${esc(nextTxt)}</div>
+        <div class="fnext ${fs.state === 'scheduled' ? '' : 'grey'} ${fs.state === 'paused' ? 'with-btn' : ''}"><span>${esc(nextTxt)}</span>${fs.state === 'paused' && !root.demo ? `<button type="button" class="btn sm resume" data-furesume ${fu.freq === 'off' ? 'disabled title="Choose how often first"' : ''}>▶ Resume follow-ups</button>` : fs.state === 'paused' && root.demo ? '<button type="button" class="btn sm resume" data-furesume>▶ Resume follow-ups</button>' : ''}</div>
         ${root.demo ? '<p class="hint" style="margin:0">Example customer: no emails are ever sent.</p>' : ''}
       </div>
       <div>
@@ -2647,6 +2652,12 @@ $('profile').addEventListener('click', e => {
   if (e.target.closest('[data-close]')) return closeProfile();
   const o = e.target.closest('[data-outcome]');
   if (o) { setOutcome(root, o.dataset.outcome); renderProfile(); if (cur) renderStatus(); return; }
+  if (e.target.closest('[data-furesume]')) {
+    const fu = fuOf(root); fu.resumeAt = Date.now(); root.fu = fu; root.updated = Date.now(); saveRecs();
+    const st = fuState(familyOf(root));
+    toast(st.state === 'scheduled' ? 'Follow-ups resumed. Next one ' + new Date(st.next).toLocaleDateString('en-IE', { weekday:'long', day:'2-digit', month:'2-digit' }) + ' at 09:00' : 'Follow-ups resumed');
+    renderProfile(); if (!$('listView').hidden) renderList(); if (cur) renderStatus(); return;
+  }
   const jd = e.target.closest('[data-jsdel]');
   if (jd) {
     if (jd.dataset.sure !== '1') { jd.dataset.sure = '1'; jd.textContent = 'Remove?'; setTimeout(() => { if (jd.isConnected) { jd.dataset.sure = ''; jd.textContent = '✕'; } }, 3000); return; }
