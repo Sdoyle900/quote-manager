@@ -1141,7 +1141,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 19 Nov 2026 · logo in signature</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 19 Nov 2026 · rep name in thread</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2263,7 +2263,9 @@ const thIsMe = m => isMine(m);
 const thWhen = m => Date.parse(thIsMe(m) ? (m.sentDateTime || m.receivedDateTime) : (m.receivedDateTime || m.sentDateTime));
 function thDemo(root) {
   // practice / not connected: build the thread from what the quote manager has recorded
-  const fam = familyOf(root), d = latestOf(fam).data, me = myName || d.signName || 'You', out = [];
+  const fam = familyOf(root), d = latestOf(fam).data, out = [];
+  // whose emails these are: the rep you're viewing (office), otherwise you
+  const me = viewRep ? (repInfo(viewRep).name || d.signName || viewRep) : (myName || d.signName || 'You');
   jobSends(fam).forEach((s, i) => out.push({ id:'s' + i + s.at, me:true, fromName:me, to:s.to, at:s.at, subject:s.subject, preview:fill(settings.body, s.rec.data).slice(0, 300), att:s.brochures && s.brochures.length }));
   (root.fuLog || []).filter(l => !l.pending).forEach((l, i) => out.push({ id:'f' + i + l.at, me:true, fromName:me, to:d.clientEmail, at:l.at, subject:'Re: ' + fill(settings.subject, d), preview:fill(fuOf(root).msg || settings.fuMsg, d).slice(0, 300) }));
   jobReplies(fam).forEach((r, i) => out.push({ id:'r' + i + r.at, me:false, fromName:r.from, fromAddr:r.email, to:me, at:r.at, subject:'Re: ' + fill(settings.subject, d), preview:r.preview }));
