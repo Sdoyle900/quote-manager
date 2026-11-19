@@ -627,6 +627,7 @@ table.st-tb tr[data-strep] { cursor:pointer; } table.st-tb tr[data-strep]:hover 
 .rp-sent { margin-top:6px; color:#15803d; font-weight:600; }
 .rp-sentb { color:#15803d !important; }
 .send-fu { margin:0; }
+.send-practice { margin:0; font-size:12.5px; background:#fff7e0; border:1px solid #f0d58a; color:#5c4500; border-radius:8px; padding:8px 11px; }
 .send-fu .sf-req { font-size:10.5px; letter-spacing:.04em; color:#b42318; background:#fef0ee; border-radius:8px; padding:1px 7px; margin-left:6px; text-transform:none; }
 .send-fu:not(.need) .sf-req { display:none; }
 .send-fu.need { border-color:#e8a29a; box-shadow:0 0 0 3px #fde4e0; }
@@ -817,7 +818,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
   <div class="rates-card" id="accessCard" hidden></div>
   <div class="viewbar" id="viewBar" hidden></div>
   <div class="hello" id="hello"></div>
-  <div class="demo-banner" id="demoBanner" hidden><span><b>These are example quotes with made-up customers</b>, so you can see how everything works. They can't be emailed and never send follow-ups.</span><button class="btn sm" id="demoRm" type="button">Remove examples</button></div>
+  <div class="demo-banner" id="demoBanner" hidden><span><b>These are example quotes with made-up customers</b>, so you can see how everything works. Nothing is really emailed, and they never send follow-ups.</span><button class="btn sm" id="demoRm" type="button">Remove examples</button></div>
   <div class="tiles" id="tiles"></div>
   <div class="toolbar">
     <div class="tabs" id="tabs"></div>
@@ -941,6 +942,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 <div class="modal-back" id="sendModal" hidden>
   <form class="modal" id="sendForm" novalidate>
     <h3>Send quote from Outlook</h3>
+    <p class="send-practice" id="sendPractice" hidden><b>Practice:</b> this is exactly what you'd see when sending a real quote. Try ticking brochures, adding photos and choosing a follow-up. When you press Send, nothing is emailed.</p>
     <label class="f">To<input id="sendTo" type="text" placeholder="customer@email.com" autocomplete="off"></label>
     <label class="f">CC (optional)<input id="sendCc" type="text" autocomplete="off"></label>
     <label class="f">Subject<input id="sendSubject" type="text"></label>
@@ -1019,7 +1021,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · portal & repair tabs</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 19 Nov 2026 · practice send window</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -4871,7 +4873,8 @@ async function loadBrochure(b) {
 
 $('sendBtn').onclick = () => {
   if (!cur) return;
-  if (cur.demo) { toast('This is an example quote, so it can\'t be emailed.'); return; }
+  if (cur.demo && !PRACTICE) { toast('This is an example quote, so it can\'t be emailed.'); return; }
+  $('sendPractice').hidden = !PRACTICE;
   if (!isLatest(cur)) { toast('This is an earlier version. Open the current one to send it.'); return; }
   $('sendTo').value = q.clientEmail || '';
   $('sendCc').value = '';
@@ -4887,7 +4890,7 @@ $('sendBtn').onclick = () => {
   $('sendErr').hidden = true;
   const last = cur.sends[cur.sends.length - 1];
   $('sendNote').textContent = (last ? `This quote was already sent on ${fmtDT(last.at)}. Sending again starts a new email, and replies to both are tracked. ` : '') +
-    (account ? `Sends from ${account.username}. A copy goes to your Outlook Sent Items.` : 'You will be asked to sign in to Outlook first.');
+    (PRACTICE ? 'In the real quote manager this sends from your own Outlook, and a copy goes to your Sent Items.' : account ? `Sends from ${account.username}. A copy goes to your Outlook Sent Items.` : 'You will be asked to sign in to Outlook first.');
   $('sendModal').hidden = false;
   setTimeout(() => ($('sendTo').value ? $('sendSubject') : $('sendTo')).focus(), 30);
 };
@@ -4901,7 +4904,12 @@ $('sendForm').onsubmit = async e => {
   if (bad) return showErr(`“${bad}” is not a valid email address.`);
   if (!$('sendSubject').value.trim()) return showErr('Add a subject.');
   if (!$('sfFreq').value) { $('sendFu').scrollIntoView({ block:'center', behavior:'smooth' }); $('sfFreq').focus(); return showErr('Choose a follow-up (or Off) before sending.'); }
-  if (PRACTICE) return showErr('This is the practice version, so emails can’t be sent. Use the real quote manager to send quotes.');
+  if (PRACTICE) {
+    const n = 1 + chosenBrochures().length + extraFiles.length;
+    $('sendModal').hidden = true; clearFiles();
+    toast(`Practice: the email to ${to.join(', ')} would go with ${n} attachment${n === 1 ? '' : 's'}. Nothing was really sent.`);
+    return;
+  }
   if (!account && !(await signIn())) return showErr('Connect Outlook to send.');
   const bros = chosenBrochures();
   cur.broTicked = bros.map(b => b.file);
