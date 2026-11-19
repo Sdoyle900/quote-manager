@@ -617,6 +617,8 @@ table.st-tb tr[data-strep] { cursor:pointer; } table.st-tb tr[data-strep]:hover 
 .ov-ph { position:relative; margin:0; width:76px; height:76px; border-radius:6px; overflow:hidden; background:#dde1ea; }
 .ov-ph a { display:flex; width:100%; height:100%; align-items:center; justify-content:center; font-size:24px; text-decoration:none; }
 .ov-ph img { width:100%; height:100%; object-fit:cover; }
+.ov-file { display:grid; justify-items:center; gap:2px; font-size:22px; padding:4px; }
+.ov-file small { font-size:9.5px; color:var(--ink); max-width:68px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ov-phx { position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%; border:0; background:rgba(0,0,0,.6); color:#fff; font-size:11px; cursor:pointer; padding:0; }
 .ov-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .ov-sp { flex:1; }
@@ -686,6 +688,24 @@ table.st-tb tr[data-strep] { cursor:pointer; } table.st-tb tr[data-strep]:hover 
 .em-act { display:flex; gap:14px; padding-left:42px; }
 .em-act .lnk { font:inherit; font-size:12px; color:var(--navy); background:none; border:0; padding:0; cursor:pointer; text-decoration:none; font-weight:600; }
 .em-act .lnk:hover { text-decoration:underline; }
+.me-out { border-top:1px solid var(--line); padding-top:12px; display:grid; gap:6px; }
+.me-out-btn { width:100%; justify-content:center; color:#b42318; border-color:#f0b4ac; background:#fff; font-weight:700; }
+.me-out-btn:hover { background:#fef0ee; }
+.stamp-btn { background:var(--navy); color:#fff; border-color:var(--navy); }
+.stamp-ok { margin:0; font-size:12.5px; color:#15803d; font-weight:600; }
+.stamped { display:inline-block; margin-top:3px; font-size:11px; font-weight:700; color:#1d4ed8; background:#e8efff; border:1px solid #c4d4fb; border-radius:10px; padding:1px 8px; white-space:nowrap; }
+.mf-modal { grid-template-rows:auto auto auto auto 1fr; }
+.mf-modal .send-practice { margin:0; }
+.mf-att { display:flex; flex-wrap:wrap; gap:6px; }
+.mf-chip { white-space:nowrap; max-width:100%; display:inline-flex; align-items:center; gap:6px; font-size:12.5px; background:#fff; border:1px solid var(--ui-line); border-radius:6px; padding:4px 8px; }
+.mf-chip.off { opacity:.55; text-decoration:line-through; }
+.mf-chip small { color:var(--muted); }
+.mf-chip button { border:0; background:none; color:var(--muted); cursor:pointer; padding:0; }
+.mf-chip input { margin:0; width:auto !important; flex:none; }
+.ov-std[hidden] { display:none !important; }
+.mf-nosheet { margin:0; }
+.mf-won { margin:0; font-size:12.5px; background:#e9f7ef; border:1px solid #b9e2c8; color:#14532d; border-radius:8px; padding:8px 11px; }
+.em-card { display:grid; gap:10px; }
 .nojs { display:inline-block; margin-top:3px; font:inherit; font-size:11px; font-weight:700; color:#b42318; background:#fef0ee; border:1px solid #f5c2bc; border-radius:10px; padding:1px 8px; white-space:nowrap; cursor:default; }
 button.nojs { cursor:pointer; }
 button.nojs:hover { border-color:#b42318; }
@@ -811,6 +831,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
   <button class="btn" id="photoRm" type="button" hidden>Remove photo</button>
   <label class="f">Your name<input id="meNameIn" autocomplete="name" placeholder="e.g. Ben Murphy"></label>
   <p class="hint" style="margin:0">Used for “Hi …”, and to sign new quotes and follow-up emails.</p>
+  <div class="me-out" id="meOutWrap" hidden><button class="btn me-out-btn" id="meSignOut" type="button">↪ Sign out</button><span class="hint">Signs you out of the quote manager and Outlook on this computer. Your quotes stay safe in SharePoint.</span></div>
   <input type="file" id="photoIn" accept="image/*" hidden>
 </div>
 
@@ -877,6 +898,13 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
   </div>
   <h3 class="rates-h3">Who uses which rates</h3>
   <div class="rates-card"><div id="ratesWho"></div></div>
+  <h3 class="rates-h3">Emails</h3>
+  <div class="rates-card em-card">
+    <label class="f">Manufacturing (stamping) email<input id="mfgEmailIn" type="text" autocomplete="off" placeholder="sales@sdwindows.ie"></label>
+    <label class="f">Repairs email<input id="repEmailIn" type="text" autocomplete="off" placeholder="repairssdw@gmail.com"></label>
+    <p class="hint" style="margin:0">Used by <b>Send for stamping</b> and <b>Send to repairs</b>. Reps can change the address for one email, but only the office changes these standard ones.</p>
+    <div><button class="btn primary" id="emailsSave" type="button">Save emails</button></div>
+  </div>
   <h3 class="rates-h3">Map</h3>
   <div class="rates-card mp-key" id="mapKeyRow"><label class="f">TomTom key <span class="hint" style="font-weight:400">The TomTom key (the same one Sash Dash uses) for the Map tab. Only the office sees this box. With it, every Eircode lands on the exact house; without it, pins are placed by the address.</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap"><input id="mapKeyIn" autocomplete="off" spellcheck="false" placeholder="paste the key from developer.tomtom.com" style="flex:1;min-width:220px"><button class="btn primary" id="mapKeySave" type="button">Save key</button></span></label></div>
@@ -1069,9 +1097,9 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
     <div class="ov-head"><h3>Repair sheet &amp; order</h3><span class="ov-files" id="ovFiles"></span>
       <span class="ov-sp"></span><a class="btn sm" id="ovOpen" target="_blank" rel="noopener">Open in SharePoint</a><button type="button" class="btn sm" id="ovClose">Close</button></div>
     <div class="tabs ov-tabs"><button type="button" class="on" data-ovt="sheet">Repair sheet</button><button type="button" data-ovt="order">Order</button><button type="button" data-ovt="send">✉ Send to repairs</button></div>
-    <div class="ov-drop" id="ovDrop"><div class="ov-dh"><b>Photos</b> <span class="hint" id="ovPhCount"></span>
-      <label class="btn sm">📷 Add photos<input type="file" id="ovPhIn" accept="image/*" multiple hidden></label>
-      <span class="hint">or drag and drop photos anywhere here</span><span class="hint" id="ovPhMsg"></span></div>
+    <div class="ov-drop" id="ovDrop"><div class="ov-dh"><b>Photos &amp; files</b> <span class="hint" id="ovPhCount"></span>
+      <label class="btn sm">📎 Add photos or files<input type="file" id="ovPhIn" multiple hidden></label>
+      <span class="hint">PDFs, drawings, photos… or drag and drop them anywhere here</span><span class="hint" id="ovPhMsg"></span></div>
       <div class="ov-phs" id="ovPhotos"></div></div>
     <div class="ov-sheet" id="ovSheet" hidden><div class="ov-sheet-acts"><button type="button" class="btn sm" id="ovSheetPrint">🖨 Print</button><button type="button" class="btn sm" id="ovSheetPdf">⬇ Download PDF</button><span class="hint">Prints and downloads the repair sheet, then the order and photos.</span></div><iframe id="ovSheetFrame" title="Repair sheet preview"></iframe></div>
     <div class="ov-view" id="ovView"></div>
@@ -1088,9 +1116,32 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
   </div>
 </div>
 
+<div class="modal-back" id="mfModal" hidden>
+  <div class="modal ov-modal mf-modal">
+    <div class="ov-head"><h3>Send to manufacturing</h3><span class="ov-files"><b id="mfTitle"></b></span><span class="ov-sp"></span><button type="button" class="btn sm" id="mfClose">Close</button></div>
+    <p class="send-practice" id="mfPractice" hidden><b>Practice:</b> this is exactly what the rep sees. When you press Send, nothing is emailed.</p>
+    <div class="tabs ov-tabs"><button type="button" class="on" data-mft="order">Order</button><button type="button" data-mft="send">🏭 Send to manufacturing</button></div>
+    <div class="ov-drop" id="mfDrop"><div class="ov-dh"><b>Attachments</b> <span class="hint" id="mfAttCount"></span>
+      <label class="btn sm">📎 Add files<input type="file" id="mfFileIn" multiple hidden></label>
+      <span class="hint">drawings, photos, PDFs… or drag and drop them anywhere here</span></div>
+      <div class="mf-att" id="mfAtt"></div><p class="mf-nosheet" id="mfNoSheet" hidden><span class="nojs">⚠ Job sheet not uploaded</span></p></div>
+    <div class="ov-view" id="mfView"></div>
+    <form class="ov-send" id="mfSend" hidden novalidate>
+      <label class="f">To<input id="mfTo" type="text" autocomplete="off"></label>
+      <label class="ov-std" id="mfStdRow" hidden><input type="checkbox" id="mfStd"><span>Make this the standard manufacturing email from now on (instead of <b id="mfStdNow"></b>)</span></label>
+      <label class="f">Subject<input id="mfSubj" type="text"></label>
+      <label class="f">Message<textarea id="mfMsg" rows="12"></textarea></label>
+      <p class="mf-won" id="mfWonNote" hidden>Sending this marks the job as <b>Won</b>, so it also appears on the Repairs tab.</p>
+      <p class="hint" id="mfLast" style="margin:0"></p>
+      <p class="err" id="mfErr" style="margin:0"></p>
+      <div class="acts"><span class="th-msg" id="mfMsgLine"></span><button type="submit" class="btn primary" id="mfGo">🏭 Send to manufacturing</button></div>
+    </form>
+  </div>
+</div>
+
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 19 Nov 2026 · phones & app icon</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 19 Nov 2026 · stamping & sign out</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2648,7 +2699,7 @@ function renderList() {
         : `<span class="off">${esc(fs.label)}</span>`;
       const repOn = lastRep && lastRep.rec !== latest ? ` · on ${esc(displayRef(lastRep.rec.data))}` : '';
       return `<tr class="${un ? 'newreply' : ''}" data-open="${latest.id}" data-root="${root.id}" title="Open the customer window">
-        <td>${pill(st)}${un ? `<br><span class="newb">${un} NEW</span>` : ''}${st === 'won' && !jobSheetsOf(root).length ? `<br><button type="button" class="nojs" data-profile="${root.id}" title="Open to upload the job sheet">⚠ No job sheet</button>` : ''}</td>
+        <td>${pill(st)}${un ? `<br><span class="newb">${un} NEW</span>` : ''}${st === 'won' && !jobSheetsOf(root).length ? `<br><button type="button" class="nojs" data-profile="${root.id}" title="Open to upload the job sheet">⚠ No job sheet</button>` : ''}${(root.stampLog || []).length ? `<br><span class="stamped">🏭 Stamping sent</span>` : ''}</td>
         <td class="ref">${esc(d.ref || '—')}${num(d.rev) ? `<span class="revtag">Rev ${num(d.rev)}</span>` : ''}</td>
         <td><button type="button" class="cust" data-openq="${latest.id}" title="Open the quote">${esc(d.client || '(no name)')}</button>${d.jobRef ? `<div class="sub2"><i>Job Ref: ${esc(d.jobRef)}</i></div>` : addr1 ? `<div class="sub2">${esc(addr1)}</div>` : ''}</td>
         <td class="hide-sm">${fmtDate(d.date)}</td>
@@ -2743,6 +2794,7 @@ function renderProfile() {
         </div>
         <span class="sub2" style="margin-left:10px">Marking Won or Lost stops follow-up emails.</span>
         ${outcomeExtraHTML(root)}
+        ${root.outcome === 'lost' ? '' : stampHTML(root)}
       </div>
       <div class="facts3">
         <div class="fact"><span>Last email sent</span><b>${ls ? fmtDT(ls.at) : '—'}</b><i>${ls ? esc(displayRef(ls.rec.data)) + ' · quote' + (ls.brochures && ls.brochures.length ? ` + ${ls.brochures.length} brochure${ls.brochures.length === 1 ? '' : 's'}` : '') : 'Not sent yet'}</i></div>
@@ -2899,12 +2951,14 @@ function renderMe() {
   $('photoBtn').textContent = settings.photo ? 'Change photo' : 'Add a photo';
   $('photoRm').hidden = !settings.photo;
   if (document.activeElement !== $('meNameIn')) $('meNameIn').value = name;
+  $('meOutWrap').hidden = PRACTICE || !account;
 }
 function openMe() { renderMe(); $('meMenu').hidden = false; }
 $('meBtn').onclick = e => { e.stopPropagation(); $('meMenu').hidden ? openMe() : ($('meMenu').hidden = true); };
 document.addEventListener('click', e => { if (!$('meMenu').hidden && !e.target.closest('#meMenu') && !e.target.closest('#meBtn')) $('meMenu').hidden = true; });
 $('meNameIn').addEventListener('input', e => { settings.userName = e.target.value; saveSettings(); renderMe(); if (!$('listView').hidden) renderList(); });
 $('photoBtn').onclick = () => $('photoIn').click();
+$('meSignOut').onclick = async () => { const b = $('meSignOut'); b.disabled = true; b.textContent = 'Signing out…'; await signOut(); b.disabled = false; b.textContent = '↪ Sign out'; };
 $('photoRm').onclick = () => { settings.photo = ''; saveSettings(); renderMe(); };
 $('photoIn').onchange = async e => {
   const file = e.target.files[0]; e.target.value = ''; if (!file) return;
@@ -3409,7 +3463,7 @@ async function loadCloudPricing() {
       const base = lists.dublin || lists.roscommon || (listOK(old) ? old : null) || { triplePct:pricing.triplePct, families:pricing.families };
       Object.keys(REGIONS).forEach(k => { if (!lists[k]) { lists[k] = JSON.parse(JSON.stringify(base)); priceDirty = true; } });
       const map = (await safeRead(REGION_MAP)) || {};
-      priceBook = { lists, regions:map.regions || {}, names:map.names || {}, mapKey:Object.keys(REGIONS).map(k => lists[k].mapKey).find(Boolean) || '' };
+      priceBook = { lists, regions:map.regions || {}, names:map.names || {}, mapKey:Object.keys(REGIONS).map(k => lists[k].mapKey).find(Boolean) || '', mfgEmail:Object.keys(REGIONS).map(k => lists[k].mfgEmail).find(Boolean) || '' };
       buildExtras();
       alignItems();
       myRegion = priceBook.regions[cloud.me] || 'dublin';
@@ -3457,7 +3511,7 @@ async function savePricingToCloud() {
   try {
     for (const k of Object.keys(REGIONS)) {
       const l = priceBook.lists[k];
-      await putPath(REGIONS[k].folder + '/rates.json', { app:'sdw-quote-manager', version:2, kind:'pricing', saved:new Date().toISOString(), pricing:{ triplePct:l.triplePct, families:l.families, items:(l.items || []).filter(x => String(x.name || '').trim()), extras:extrasFor(k), mapKey:priceBook.mapKey || '' } });
+      await putPath(REGIONS[k].folder + '/rates.json', { app:'sdw-quote-manager', version:2, kind:'pricing', saved:new Date().toISOString(), pricing:{ triplePct:l.triplePct, families:l.families, items:(l.items || []).filter(x => String(x.name || '').trim()), extras:extrasFor(k), mapKey:priceBook.mapKey || '', mfgEmail:priceBook.mfgEmail || '' } });
       l.extras = extrasFor(k);
     }
     await saveRegionMap();
@@ -4159,10 +4213,10 @@ function renderRepairs() {
   }).join('')}</tbody></table>` : `<p class="hint rp-empty">${repairs.length ? 'No repair sheets match.' : 'No repair sheets yet. Use the Repair sheet button beside a won job below.'}</p>`;
   const jobs = wonJobs().filter(j => hit(j.d.client, j.d.clientAddress, displayRef(j.latest.data), j.s.name, j.d.jobRef));
   $('rpWonCount').textContent = jobs.length;
-  $('rpWon').innerHTML = jobs.length ? `<table class="ql rp-tbl"><thead><tr><th>Job no.</th><th>Client</th><th>Rep</th><th>Won</th><th style="text-align:right">Price (excl. VAT)</th><th>Job sheet</th><th>Repairs</th><th></th></tr></thead><tbody>${jobs.map(j => {
+  $('rpWon').innerHTML = jobs.length ? `<table class="ql rp-tbl"><thead><tr><th>Job no.</th><th>Client</th><th>Rep</th><th>Won</th><th style="text-align:right">Price (excl. VAT)</th><th>Job sheet</th><th>Stamping</th><th>Repairs</th><th></th></tr></thead><tbody>${jobs.map(j => {
     const a = String(j.d.clientAddress || '').split('\n').map(x => x.trim()).filter(Boolean);
     const mine = repairs.filter(r => r.jobId === j.id), open = mine.filter(r => r.status !== 'done').length;
-    return `<tr><td><b>${esc(displayRef(j.latest.data))}</b></td><td><b>${esc(j.d.client || '(no name)')}</b><small class="rp-sub">${esc(a.join(', '))}</small></td><td>${esc(j.s.name)}</td><td>${j.at ? fmtD(j.at) : '—'}</td><td style="text-align:right">${stMoney(j.price)}</td><td>${jobSheetsOf(j.root).length ? jobSheetsOf(j.root).map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener" class="rp-js">${esc(f.name)}</a>`).join('') : '<span class="nojs">⚠ Not uploaded</span>'}</td><td>${mine.length ? `${mine.length} sheet${mine.length === 1 ? '' : 's'}${open ? ` · <span class="rp-open">${open} open</span>` : ''}` : '<span class="hint">—</span>'}</td><td class="rp-acts"><button type="button" class="btn primary sm" data-rpnew="${esc(j.id)}">+ Repair sheet</button></td></tr>`;
+    return `<tr><td><b>${esc(displayRef(j.latest.data))}</b></td><td><b>${esc(j.d.client || '(no name)')}</b><small class="rp-sub">${esc(a.join(', '))}</small></td><td>${esc(j.s.name)}</td><td>${j.at ? fmtD(j.at) : '—'}</td><td style="text-align:right">${stMoney(j.price)}</td><td>${jobSheetsOf(j.root).length ? jobSheetsOf(j.root).map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener" class="rp-js">${esc(f.name)}</a>`).join('') : '<span class="nojs">⚠ Not uploaded</span>'}</td><td>${(j.root.stampLog || []).length ? `<span class="stamped">🏭 ${fmtD(j.root.stampLog[j.root.stampLog.length - 1].at)}</span>` : '<span class="hint">—</span>'}</td><td>${mine.length ? `${mine.length} sheet${mine.length === 1 ? '' : 's'}${open ? ` · <span class="rp-open">${open} open</span>` : ''}` : '<span class="hint">—</span>'}</td><td class="rp-acts"><button type="button" class="btn primary sm" data-rpnew="${esc(j.id)}">+ Repair sheet</button></td></tr>`;
   }).join('')}</tbody></table>` : `<p class="hint rp-empty">${q ? 'No won jobs match.' : 'No won jobs yet. Jobs show up here as soon as a quote is marked Won.'}</p>`;
 }
 function showRepairs() {
@@ -4329,7 +4383,7 @@ function renderRpJS() {
   const last = (s.sent || [])[(s.sent || []).length - 1];
   const sentLine = last ? `<div class="rp-sent">✓ Sent to repairs ${fmtDT(last.at)} · ${esc(last.to)}</div>` : '';
   btn.textContent = inc.length ? 'Remove job sheet' : '📎 Include job sheet';
-  const phLine = phN ? `<div class="rp-sent" style="color:var(--navy)">📷 ${phN} photo${phN === 1 ? '' : 's'} added (in View order)</div>` : '';
+  const phLine = phN ? `<div class="rp-sent" style="color:var(--navy)">📎 ${phN} photo/file attachment${phN === 1 ? '' : 's'} added (in View sheet &amp; order)</div>` : '';
   if (!s.jobId) { box.innerHTML = phLine + sentLine; box.hidden = !(phLine || sentLine); return; }
   box.hidden = false;
   if (inc.length) box.innerHTML = `<b>Job sheet included</b> (prints after the repair sheet): ${inc.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a>`).join(', ')}`;
@@ -4527,23 +4581,24 @@ async function uploadToSP(path, file) {
   }
   return item;
 }
+const isImg = n => /\.(jpe?g|png|heic|webp|gif|bmp)$/i.test(n || '');
 function renderOvPhotos() {
   const s = rpEdit; if (!s) return;
   const ph = s.photos || [];
-  $('ovPhotos').innerHTML = ph.map((f, i) => `<figure class="ov-ph"><a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}">${phThumbs[f.id] ? `<img src="${phThumbs[f.id]}" alt="">` : '<span>📷</span>'}</a><button type="button" class="ov-phx" data-phdel="${i}" title="Remove photo">✕</button></figure>`).join('');
-  $('ovPhCount').textContent = ph.length ? `${ph.length} photo${ph.length === 1 ? '' : 's'}` : 'No photos yet';
-  ph.forEach(f => { if (!phThumbs[f.id] && f.id && !f.loading) { f.loading = true; fileBlob(f).then(b => { phThumbs[f.id] = URL.createObjectURL(b); delete f.loading; renderOvPhotos(); }).catch(() => { delete f.loading; }); } });
+  $('ovPhotos').innerHTML = ph.map((f, i) => `<figure class="ov-ph"><a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}">${isImg(f.name) ? (phThumbs[f.id] ? `<img src="${phThumbs[f.id]}" alt="">` : '<span>📷</span>') : `<span class="ov-file">📄<small>${esc(f.name)}</small></span>`}</a><button type="button" class="ov-phx" data-phdel="${i}" title="Remove">✕</button></figure>`).join('');
+  $('ovPhCount').textContent = ph.length ? `${ph.length} file${ph.length === 1 ? '' : 's'}` : 'Nothing added yet';
+  ph.forEach(f => { if (isImg(f.name) && !phThumbs[f.id] && f.id && !f.loading) { f.loading = true; fileBlob(f).then(b => { phThumbs[f.id] = URL.createObjectURL(b); delete f.loading; renderOvPhotos(); }).catch(() => { delete f.loading; }); } });
   ovAttList();
 }
 async function addOrderPhotos(files) {
   const s = rpEdit; if (!s) return;
-  files = [...files].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|heic|webp|gif|bmp)$/i.test(f.name));
-  if (!files.length) return toast('Only photos can be added here');
+  files = [...files];
+  if (!files.length) return;
   if (!cloud.driveId && !PRACTICE) return toast('Sign in to SharePoint first');
   const msg = $('ovPhMsg');
   if (PRACTICE) {
     for (const f0 of files) { const f = await shrinkPhoto(f0), id = 'tmp' + Date.now() + Math.random().toString(36).slice(2, 6), url = URL.createObjectURL(f); phThumbs[id] = url; s.photos = (s.photos || []).concat({ id, name:f.name, url, size:f.size, at:Date.now(), temp:true }); }
-    renderOvPhotos(); renderRpJS(); toast('Practice: photos are kept until you close the page'); return;
+    renderOvPhotos(); renderRpJS(); toast('Practice: added files are kept until you close the page'); return;
   }
   try {
     for (let i = 0; i < files.length; i++) {
@@ -4551,7 +4606,7 @@ async function addOrderPhotos(files) {
       const f = await shrinkPhoto(files[i]);
       const folder = safeName(s.jobNo || '') ? `${safeName(s.jobNo)} ${s.id}` : s.id;
       const item = await uploadToSP(`_office/Repair photos/${folder}/${safeName(f.name)}`, f);
-      phThumbs[item.id] = URL.createObjectURL(f);
+      if (isImg(f.name)) phThumbs[item.id] = URL.createObjectURL(f);
       s.photos = (s.photos || []).concat({ id:item.id, name:f.name, url:item.webUrl, size:f.size, at:Date.now() });
       renderOvPhotos();
     }
@@ -4563,7 +4618,7 @@ async function addOrderPhotos(files) {
 }
 function ovAttList() {
   const s = rpEdit; if (!s) return;
-  $('ovAtt').innerHTML = [`Repair sheet ${esc(s.jobNo || '')}.pdf`].concat(ovFiles.map(f => esc(f.name)), (s.photos || []).map(f => '📷 ' + esc(f.name))).map(n => `<li>📎 ${n}</li>`).join('');
+  $('ovAtt').innerHTML = [`Repair sheet ${esc(s.jobNo || '')}.pdf`].concat(ovFiles.map(f => esc(f.name)), (s.photos || []).map(f => (isImg(f.name) ? '📷 ' : '📄 ') + esc(f.name))).map(n => `<li>📎 ${n}</li>`).join('');
 }
 $('ovPhIn').addEventListener('change', e => { const f = e.target.files; if (f.length) addOrderPhotos(f); e.target.value = ''; });
 ['dragenter', 'dragover'].forEach(ev => $('ovModal').addEventListener(ev, e => { if (![...e.dataTransfer.types].includes('Files')) return; e.preventDefault(); $('ovDrop').classList.add('over'); }));
@@ -4638,6 +4693,150 @@ $('rpSendBtn').onclick = () => openOrder('send');
 $('ovSheetPrint').onclick = () => printRepair(readRepairForm()).catch(e => toast('Couldn’t print: ' + e.message));
 $('ovSheetPdf').onclick = () => downloadRepairPdf(readRepairForm(), $('ovSheetPdf'));
 
+// =====================================================================
+// Send for stamping: the rep sends a job to the manufacturing department
+// (job sheet + any other files) from their own Outlook. Sending marks the job Won,
+// so it shows on the Repairs tab too.
+// =====================================================================
+const MFG_EMAIL_STD = 'sales@sdwindows.ie';
+const mfgEmail = () => (priceBook && priceBook.mfgEmail) || pricing.mfgEmail || MFG_EMAIL_STD;
+let mfRoot = null, mfExtra = [], mfSkip = new Set(), mfBusy = false;
+function stampHTML(root) {
+  const log = root.stampLog || [], last = log[log.length - 1], ro = !!viewRep;
+  return `<div class="js-box stamp-box"><div class="js-h"><b>Send for stamping</b>
+    ${ro ? '' : `<button type="button" class="btn sm stamp-btn" data-stamp>🏭 ${last ? 'Send again' : 'Send for stamping'}</button>`}</div>
+    ${last ? `<p class="stamp-ok">✓ Sent to manufacturing ${fmtDT(last.at)} · ${esc(last.to)}${last.files ? ` · ${last.files} attachment${last.files === 1 ? '' : 's'}` : ''}${last.by ? ' · by ' + esc(last.byName || last.by) : ''}</p>`
+      : `<p class="js-none">Not sent to manufacturing yet.${root.outcome === 'won' ? '' : ' Sending it marks the job as <b>Won</b>.'}</p>`}</div>`;
+}
+function mfFiles() {
+  const sheets = jobSheetsOf(mfRoot).map((f, i) => ({ kind:'sheet', key:'s' + i, f }));
+  return sheets.concat(mfExtra.map((f, i) => ({ kind:'extra', key:'e' + i, f })));
+}
+function renderMfAtt() {
+  const all = mfFiles();
+  $('mfAtt').innerHTML = all.map(x => {
+    const on = x.kind === 'extra' || !mfSkip.has(x.key), n = x.f.name || 'file';
+    return `<span class="mf-chip ${on ? '' : 'off'}">${x.kind === 'sheet' ? `<input type="checkbox" data-mfsheet="${x.key}" ${on ? 'checked' : ''} aria-label="Attach ${esc(n)}">` : ''}${/\.(jpe?g|png|heic|webp|gif)$/i.test(n) ? '📷' : '📄'} ${esc(n)} <small>${fmtSize(x.f.size || 0)}${x.kind === 'sheet' ? ' · job sheet' : ''}</small>${x.kind === 'extra' ? `<button type="button" data-mfdel="${x.key.slice(1)}" aria-label="Remove">✕</button>` : ''}</span>`;
+  }).join('') || '<span class="hint">No attachments yet.</span>';
+  const n = all.filter(x => x.kind === 'extra' || !mfSkip.has(x.key)).length;
+  $('mfAttCount').textContent = n ? `${n} attachment${n === 1 ? '' : 's'}` : '';
+  $('mfNoSheet').hidden = !!jobSheetsOf(mfRoot).length;
+}
+async function mfShowOrder() {
+  const sheets = jobSheetsOf(mfRoot);
+  if (!sheets.length) { $('mfView').innerHTML = `<p class="ov-msg"><span class="nojs">⚠ Job sheet not uploaded</span><br><br>Upload the signed job sheet in the customer window, or add it below with <b>📎 Add files</b>.</p>`; return; }
+  $('mfView').innerHTML = '<p class="ov-msg">Loading the order…</p>';
+  const pages = await jobSheetPages(sheets);
+  $('mfView').innerHTML = pages.map(p => p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : `<p class="ov-msg">${esc(p.note)}</p>`).join('');
+}
+function mfTab(t) {
+  document.querySelectorAll('#mfModal [data-mft]').forEach(b => b.classList.toggle('on', b.dataset.mft === t));
+  $('mfView').hidden = t !== 'order'; $('mfSend').hidden = t !== 'send';
+}
+function mfDefaultText(root) {
+  const fam = familyOf(root), latest = latestOf(fam), d = latest.data;
+  const addr = String(d.clientAddress || '').split('\n').map(x => x.trim()).filter(Boolean).join(', ');
+  const box = root.wonBox && root.wonBox.label ? `${root.wonBox.label}${num(root.wonBox.value) ? ' · ' + eur(num(root.wonBox.value)) : ''}` : '';
+  return `Hi,\n\nPlease find attached the order for stamping.\n\nCustomer: ${d.client || ''}${addr ? '\nAddress: ' + addr : ''}${d.clientPhone ? '\nPhone: ' + d.clientPhone : ''}\nJob no.: ${displayRef(d)}${d.jobRef ? '\nJob ref: ' + d.jobRef : ''}${box ? '\nPrice agreed: ' + box : ''}\nRep: ${myName || (settings.userName || '').trim() || (account && account.name) || ''}\n\nKind regards,\n${myName || (settings.userName || '').trim() || ''}`;
+}
+function openStamp(root) {
+  mfRoot = root; mfExtra = []; mfSkip = new Set();
+  const d = latestOf(familyOf(root)).data;
+  $('mfTitle').textContent = `${displayRef(d)} · ${d.client || ''}`;
+  $('mfTo').value = mfgEmail();
+  $('mfStd').checked = false; $('mfStdRow').hidden = true;
+  $('mfSubj').value = `For stamping – ${displayRef(d)} ${d.client || ''}`.replace(/\s+/g, ' ').trim();
+  $('mfMsg').value = mfDefaultText(root);
+  $('mfErr').textContent = ''; $('mfMsgLine').textContent = '';
+  $('mfPractice').hidden = !PRACTICE;
+  $('mfWonNote').hidden = root.outcome === 'won';
+  const last = (root.stampLog || []).slice(-1)[0];
+  $('mfLast').textContent = last ? `Already sent to manufacturing ${fmtDT(last.at)} (${last.to}). Sending again sends a new email.` : '';
+  renderMfAtt();
+  $('mfModal').hidden = false; mfTab('order'); mfShowOrder();
+}
+$('profile').addEventListener('click', e => { if (e.target.closest('[data-stamp]')) { const r = recs.find(x => x.id === profId); if (r) openStamp(r); } });
+$('mfClose').onclick = () => { $('mfModal').hidden = true; };
+$('mfModal').addEventListener('click', e => {
+  const t = e.target.closest('[data-mft]'); if (t) return mfTab(t.dataset.mft);
+  const del = e.target.closest('[data-mfdel]'); if (del) { mfExtra.splice(+del.dataset.mfdel, 1); return renderMfAtt(); }
+});
+$('mfModal').addEventListener('change', e => {
+  const c = e.target.closest('[data-mfsheet]'); if (c) { c.checked ? mfSkip.delete(c.dataset.mfsheet) : mfSkip.add(c.dataset.mfsheet); return renderMfAtt(); }
+  if (e.target.id === 'mfFileIn') { mfExtra.push(...e.target.files); e.target.value = ''; renderMfAtt(); }
+});
+['dragenter', 'dragover'].forEach(ev => $('mfModal').addEventListener(ev, e => { if (![...e.dataTransfer.types].includes('Files')) return; e.preventDefault(); $('mfDrop').classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => $('mfModal').addEventListener(ev, e => { if (ev === 'dragleave' && $('mfModal').contains(e.relatedTarget)) return; $('mfDrop').classList.remove('over'); }));
+$('mfModal').addEventListener('drop', e => { if (!e.dataTransfer.files.length) return; e.preventDefault(); mfExtra.push(...e.dataTransfer.files); renderMfAtt(); });
+$('mfTo').addEventListener('input', () => {
+  const v = splitAddrs($('mfTo').value).join('; ').toLowerCase();
+  $('mfStdRow').hidden = !(cloud.office && !asRep && priceBook) || !v || v === mfgEmail().toLowerCase();
+  $('mfStdNow').textContent = mfgEmail();
+});
+async function saveMfgEmail(v) {
+  for (const k of Object.keys(REGIONS)) {
+    const path = REGIONS[k].folder + '/rates.json', j = await readPath(path);
+    if (!j) throw new Error('save the Rates first');
+    (j.pricing || j).mfgEmail = v; await putPath(path, j);
+    priceBook.lists[k].mfgEmail = v;
+  }
+  priceBook.mfgEmail = v;
+}
+$('mfSend').addEventListener('submit', async e => {
+  e.preventDefault(); if (mfBusy) return;
+  const root = mfRoot, to = splitAddrs($('mfTo').value), btn = $('mfGo'), msgEl = $('mfMsgLine');
+  $('mfErr').textContent = '';
+  if (!to.length || to.some(a => !validEmail(a))) { $('mfErr').textContent = 'Check the email address.'; return; }
+  const files = mfFiles().filter(x => x.kind === 'extra' || !mfSkip.has(x.key));
+  if (!files.length) { $('mfErr').textContent = 'Add the job sheet or another file first.'; return; }
+  const done = () => {
+    if (root.outcome !== 'won') setOutcome(root, 'won');
+    root.stampLog = (root.stampLog || []).concat({ at:Date.now(), to:to.join('; ') + (PRACTICE ? ' (practice, not really sent)' : ''), files:files.length, by:cloud.me || '', byName:myName || (settings.userName || '').trim() });
+    root.updated = Date.now(); saveRecs();
+    $('mfModal').hidden = true; renderProfile(); if (!$('listView').hidden) renderList(); if (cur) renderStatus();
+  };
+  if (PRACTICE) { done(); toast(`Practice: ${files.length} attachment${files.length === 1 ? '' : 's'} would go to ${to.join(', ')}. Nothing was really sent.`); return; }
+  if (!account && !(await signIn())) { $('mfErr').textContent = 'Connect Outlook to send.'; return; }
+  mfBusy = true; btn.disabled = true; let draft = null;
+  try {
+    const d = latestOf(familyOf(root)).data;
+    btn.textContent = 'Creating email…';
+    draft = await graph('/me/messages', { method:'POST', body:{ subject:$('mfSubj').value.trim() || 'For stamping', body:{ contentType:'HTML', content:textToHtml($('mfMsg').value, d) }, toRecipients:to.map(a => ({ emailAddress:{ address:a } })) } });
+    for (const x of files) {
+      btn.textContent = `Attaching ${x.f.name}…`;
+      const blob = x.kind === 'sheet' ? await fileBlob(x.f) : x.f;
+      await addAttachment(draft.id, x.f.name, new Uint8Array(await blob.arrayBuffer()), null, blob.type || 'application/octet-stream');
+    }
+    btn.textContent = 'Sending…';
+    await graph(`/me/messages/${encodeURIComponent(draft.id)}/send`, { method:'POST' });
+    draft = null;
+    if ($('mfStd').checked && !$('mfStdRow').hidden) { try { await saveMfgEmail(to.join('; ')); } catch (e2) { toast('Sent, but the new standard email wasn’t saved: ' + e2.message); } }
+    done(); toast('Sent to manufacturing' + (root.outcome === 'won' ? '' : ''));
+  } catch (err) {
+    if (draft) { try { await graph(`/me/messages/${encodeURIComponent(draft.id)}`, { method:'DELETE' }); } catch (e2) {} }
+    $('mfErr').textContent = 'Not sent: ' + authError(err);
+  }
+  mfBusy = false; btn.disabled = false; btn.textContent = '🏭 Send to manufacturing';
+});
+// Office: the standard emails, on the Rates tab
+function renderEmailsCard() {
+  if (!priceBook) return;
+  if (document.activeElement !== $('mfgEmailIn')) $('mfgEmailIn').value = mfgEmail();
+  if (document.activeElement !== $('repEmailIn')) $('repEmailIn').value = repairsEmail || REPAIRS_EMAIL_STD;
+  if (repairs == null) loadRepairs().then(() => { if (document.activeElement !== $('repEmailIn')) $('repEmailIn').value = repairsEmail || REPAIRS_EMAIL_STD; }).catch(() => {});
+}
+$('emailsSave').onclick = async () => {
+  const m = $('mfgEmailIn').value.trim(), r = $('repEmailIn').value.trim(), b = $('emailsSave');
+  if ([m, r].some(v => v && splitAddrs(v).some(a => !validEmail(a)))) return toast('Check the email addresses');
+  b.disabled = true; b.textContent = 'Saving…';
+  try {
+    if (m !== mfgEmail()) await saveMfgEmail(m || MFG_EMAIL_STD);
+    if (r !== (repairsEmail || REPAIRS_EMAIL_STD)) await writeRepairs(() => {}, r || REPAIRS_EMAIL_STD);
+    toast('Emails saved');
+  } catch (e) { toast('Not saved: ' + e.message); }
+  b.disabled = false; b.textContent = 'Save emails';
+};
+
 // ---------- office: Rates tab ----------
 let savedBook = '';
 const bookSig = () => JSON.stringify([Object.keys(REGIONS).map(k => [priceBook.lists[k].triplePct, priceBook.lists[k].families.map(f => f.ranges.map(r => r.rate))]), priceBook.extras]);
@@ -4662,6 +4861,7 @@ function renderRates() {
   ratesState();
   renderRatesWho();
   if (document.activeElement !== $('mapKeyIn')) $('mapKeyIn').value = priceBook.mapKey || '';
+  renderEmailsCard();
 }
 // ---- Rates > Extra items ----
 let exCat = null;
