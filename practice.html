@@ -1141,7 +1141,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 19 Nov 2026 · stamping & sign out</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 19 Nov 2026 · reply tabs fix</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2338,8 +2338,7 @@ function thComposer(root) {
   const c = thComp[root.id] || (thComp[root.id] = { mode:'reply', target:'', text:'', files:[] });
   const msgs = (thCache[root.id] || {}).msgs || [];
   const fam = familyOf(root), d = latestOf(fam).data;
-  let tgt = msgs.find(m => m.id === c.target);
-  if (!tgt && c.mode !== 'new') tgt = msgs.find(m => !m.me) || msgs[0];
+  const tgt = msgs.find(m => m.id === c.target) || msgs.find(m => !m.me) || msgs[0];   // the email Reply / Reply all answers
   const mode = tgt ? c.mode : 'new';
   const who = tgt ? (tgt.me ? tgt.to : `${tgt.fromName}${tgt.fromAddr ? ' <' + tgt.fromAddr + '>' : ''}`) : (d.clientEmail || '');
   return `<div class="th-comp" data-thcomp>
@@ -2499,7 +2498,7 @@ function fuState(fam) {
   if (!sends.length) return { state:'pending', label:'Starts when sent' };
   if (fu.freq === 'off') return { state:'off', label:'Off' };
   const lastSend = sends[sends.length - 1].at;
-  const log = (root.fuLog || []).filter(l => l.at > lastSend && !l.pending);
+  const log = (root.fuLog || []).filter(l => l.at > Math.max(lastSend, fu.countFrom || 0) && !l.pending);
   const lastRep = reps.length ? reps[reps.length - 1].at : 0;
   const resumed = Math.max(lastSend, fu.resumeAt || 0);   // "Resume follow-ups" after a reply restarts the clock from then
   if (fu.stopOnReply && lastRep > resumed) return { state:'paused', label:'Paused · they replied' };
@@ -2810,7 +2809,7 @@ function renderProfile() {
         <label class="check"><input type="checkbox" data-fu="stopOnReply" ${fu.stopOnReply ? 'checked' : ''}> Stop automatically when they reply</label>
         <label class="f">Message<span class="micwrap"><textarea data-fu="msg" style="min-height:120px" placeholder="${esc(fill(settings.fuMsg, d))}">${esc(fu.msg)}</textarea>${MIC_HTML}</span></label>
         <p class="hint" style="margin:0">Leave the message empty to use the standard one from Settings. {first}, {ref} and {sender} are filled in for you.</p>
-        <div class="fnext ${fs.state === 'scheduled' ? '' : 'grey'} ${fs.state === 'paused' ? 'with-btn' : ''}"><span>${esc(nextTxt)}</span>${fs.state === 'paused' && !root.demo ? `<button type="button" class="btn sm resume" data-furesume ${fu.freq === 'off' ? 'disabled title="Choose how often first"' : ''}>▶ Resume follow-ups</button>` : fs.state === 'paused' && root.demo ? '<button type="button" class="btn sm resume" data-furesume>▶ Resume follow-ups</button>' : ''}</div>
+        <div class="fnext ${fs.state === 'scheduled' ? '' : 'grey'} ${['paused', 'off', 'done'].includes(fs.state) ? 'with-btn' : ''}"><span>${esc(nextTxt)}</span>${['paused', 'off', 'done'].includes(fs.state) && !viewRep ? `<button type="button" class="btn sm resume" data-furesume>▶ ${fs.state === 'paused' ? 'Resume follow-ups' : fs.state === 'off' ? 'Turn on follow-ups' : 'Send more follow-ups'}</button>` : ''}</div>
         ${root.demo ? '<p class="hint" style="margin:0">Example customer: no emails are ever sent.</p>' : ''}
       </div>
       <div>
@@ -2837,7 +2836,10 @@ $('profile').addEventListener('click', e => {
   const o = e.target.closest('[data-outcome]');
   if (o) { setOutcome(root, o.dataset.outcome); renderProfile(); if (cur) renderStatus(); return; }
   if (e.target.closest('[data-furesume]')) {
-    const fu = fuOf(root); fu.resumeAt = Date.now(); root.fu = fu; root.updated = Date.now(); saveRecs();
+    const fu = fuOf(root), was = fuState(familyOf(root)).state;
+    if (fu.freq === 'off') fu.freq = '2w';            // switched off: turn back on, every 2 weeks (change it in the box above)
+    if (was === 'done') fu.countFrom = Date.now();    // all sent: start a fresh round
+    fu.resumeAt = Date.now(); root.fu = fu; root.updated = Date.now(); saveRecs();
     const st = fuState(familyOf(root));
     toast(st.state === 'scheduled' ? 'Follow-ups resumed. Next one ' + new Date(st.next).toLocaleDateString('en-IE', { weekday:'long', day:'2-digit', month:'2-digit' }) + ' at 09:00' : 'Follow-ups resumed');
     renderProfile(); if (!$('listView').hidden) renderList(); if (cur) renderStatus(); return;
