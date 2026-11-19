@@ -282,7 +282,14 @@ table.calc td.c { text-align:center; }
 .revbanner.old { background:#fff4e5; border-color:#f0c27a; border-left-color:#d58a00; }
 .revbanner button { font:inherit; font-weight:700; color:var(--navy); background:none; border:none; padding:0; text-decoration:underline; cursor:pointer; }
 .btn.white { background:#fff; color:var(--navy); border-color:#fff; }
+.portal-btn { margin-bottom:8px; width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:15px; font:inherit; font-size:16px; font-weight:700; background:var(--navy); color:#fff; border:1px solid var(--navy); border-radius:10px; cursor:pointer; }
+.portal-btn:hover { filter:brightness(1.25); }
+.qt-card { margin-bottom:8px; background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:10px; padding:12px 14px; display:grid; gap:8px; }
+.qt-lbl { font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.qt-card select { font-size:17px; font-weight:700; padding:11px 12px; height:auto; color:var(--navy); }
 /* customer profile */
+.dtitle { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding-right:36px; }
+.dtitle h2 { margin:0; }
 .drawer-back { position:fixed; inset:0; background:rgba(14,18,56,.45); z-index:20; }
 .drawer { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:min(720px, calc(100% - 32px)); max-height:min(92vh, 1000px); background:#fff; border-radius:12px; box-shadow:0 24px 60px rgba(0,0,0,.28); overflow-y:auto; z-index:21; padding-bottom:env(safe-area-inset-bottom, 0px); }
 @media (max-width:600px) { .drawer { top:0; left:0; transform:none; width:100%; max-height:none; height:100%; border-radius:0; } }
@@ -586,6 +593,11 @@ table.st-tb tr[data-strep] { cursor:pointer; } table.st-tb tr[data-strep]:hover 
 .st-chart svg rect:hover, .st-chart svg path:hover { opacity:.8; }
 @media (max-width:900px) { .st-tiles { grid-template-columns:repeat(2, minmax(0, 1fr)); } .st-g2, .st-g2e { grid-template-columns:1fr; } }
 .ov-modal { width:min(900px, 100%); height:92vh; grid-template-rows:auto auto auto 1fr; }
+.ov-sheet { display:grid; grid-template-rows:auto 1fr; gap:8px; min-height:0; }
+.ov-sheet[hidden] { display:none; }
+.ov-sheet-acts { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.ov-sheet iframe { width:100%; height:100%; min-height:420px; border:0; background:#5b5f6e; border-radius:8px; }
+.btn.rp-send { background:var(--navy); color:#fff; border-color:var(--navy); }
 .ov-drop { border:1.5px dashed var(--ui-line); border-radius:8px; padding:8px 10px; display:grid; gap:8px; background:var(--tint); }
 .ov-drop.over { border-color:var(--navy); background:#e7ecfa; }
 .ov-dh { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -828,7 +840,12 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 <div class="app" id="editView" hidden>
   <div class="form" id="form">
     <div class="revbanner" id="revBanner" hidden></div>
-    <details class="sec" open id="statusSec"><summary>Status &amp; emails</summary><div class="body" id="statusBody"></div></details>
+    <button type="button" class="portal-btn" id="portalBtn">👤 Customer portal</button>
+      <div class="qt-card"><span class="qt-lbl">Quote</span>
+        <select id="titleSel" aria-label="Quote title"><option>New Windows &amp; Doors</option><option>Replacement Windows &amp; Doors</option><option value="__custom">Custom…</option></select>
+        <span class="micwrap" id="titleWrap" hidden><input id="title" data-k="title" placeholder="Type the title, e.g. Kitchen Extension Windows &amp; Doors" aria-label="Quote title (custom)"><button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button></span>
+      </div>
+    <details class="sec" open id="statusSec" hidden><summary>Status</summary><div class="body" id="statusBody"></div></details>
     <details class="sec" open><summary>1. Client &amp; reference</summary><div class="body">
       <div class="row">
         <label class="f">Client name<input id="client" data-k="client"></label>
@@ -846,10 +863,6 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
         <label class="f">Email<input id="clientEmail" type="email" data-k="clientEmail"></label>
       </div>
       <p class="hint">Phone and email are kept with the saved quote for your records. They are not printed on the quote.</p>
-      <div class="f" style="display:grid;gap:4px">
-        <label class="f">Quote title<select id="titleSel"><option>New Windows &amp; Doors</option><option>Replacement Windows &amp; Doors</option><option value="__custom">Custom…</option></select></label>
-        <span class="micwrap" id="titleWrap" hidden><input id="title" data-k="title" placeholder="Type the title, e.g. Kitchen Extension Windows &amp; Doors" aria-label="Quote title (custom)"><button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button></span>
-      </div>
       <label class="f">Intro paragraph<span class="micwrap"><textarea id="intro" data-k="intro"></textarea><button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button></span></label>
     </div></details>
 
@@ -976,19 +989,20 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
     <label class="f">Repair works required<textarea id="rp_works" rows="8" placeholder="What needs fixing…"></textarea></label>
     <div class="row rp-3"><label class="f">Status<select id="rp_status"><option value="open">Open</option><option value="booked">Booked</option><option value="done">Completed</option></select></label><label class="f">Date completed<input id="rp_completed" type="date"></label><label class="f">Signed<input id="rp_signed" type="text" placeholder="Fitter / customer"></label></div>
     <div class="rp-js-inc" id="rpJS" hidden></div>
-    <div class="acts"><button type="button" class="btn x" id="rpDel">Delete</button><button type="button" class="btn" id="rpInc">📎 Include job sheet</button><button type="button" class="btn" id="rpView" style="margin-right:auto">View order</button><button type="button" class="btn" id="rpPrint">Print / PDF</button><button type="button" class="btn" id="rpCancel">Cancel</button><button type="submit" class="btn primary" id="rpSave">Save</button></div>
+    <div class="acts"><button type="button" class="btn x" id="rpDel">Delete</button><button type="button" class="btn" id="rpInc">📎 Include job sheet</button><button type="button" class="btn" id="rpView" style="margin-right:auto">View sheet &amp; order</button><button type="button" class="btn" id="rpPrint">🖨 Print</button><button type="button" class="btn" id="rpDownload">⬇ Download PDF</button><button type="button" class="btn rp-send" id="rpSendBtn">✉ Send to repairs</button><button type="button" class="btn" id="rpCancel">Cancel</button><button type="submit" class="btn primary" id="rpSave">Save</button></div>
   </form>
 </div>
 
 <div class="modal-back" id="ovModal" hidden>
   <div class="modal ov-modal">
-    <div class="ov-head"><h3>View order</h3><span class="ov-files" id="ovFiles"></span>
+    <div class="ov-head"><h3>Repair sheet &amp; order</h3><span class="ov-files" id="ovFiles"></span>
       <span class="ov-sp"></span><a class="btn sm" id="ovOpen" target="_blank" rel="noopener">Open in SharePoint</a><button type="button" class="btn sm" id="ovClose">Close</button></div>
-    <div class="tabs ov-tabs"><button type="button" class="on" data-ovt="order">Order</button><button type="button" data-ovt="send">✉ Send to repairs</button></div>
+    <div class="tabs ov-tabs"><button type="button" class="on" data-ovt="sheet">Repair sheet</button><button type="button" data-ovt="order">Order</button><button type="button" data-ovt="send">✉ Send to repairs</button></div>
     <div class="ov-drop" id="ovDrop"><div class="ov-dh"><b>Photos</b> <span class="hint" id="ovPhCount"></span>
       <label class="btn sm">📷 Add photos<input type="file" id="ovPhIn" accept="image/*" multiple hidden></label>
       <span class="hint">or drag and drop photos anywhere here</span><span class="hint" id="ovPhMsg"></span></div>
       <div class="ov-phs" id="ovPhotos"></div></div>
+    <div class="ov-sheet" id="ovSheet" hidden><div class="ov-sheet-acts"><button type="button" class="btn sm" id="ovSheetPrint">🖨 Print</button><button type="button" class="btn sm" id="ovSheetPdf">⬇ Download PDF</button><span class="hint">Prints and downloads the repair sheet, then the order and photos.</span></div><iframe id="ovSheetFrame" title="Repair sheet preview"></iframe></div>
     <div class="ov-view" id="ovView"></div>
     <form class="ov-send" id="ovSend" hidden novalidate>
       <label class="f">To<input id="ovTo" type="text" autocomplete="off"></label>
@@ -1005,7 +1019,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · resume follow-ups</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 18 Nov 2026 · portal & repair tabs</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2035,13 +2049,20 @@ function outcomeExtraInput(e, root) {
 // ---------- job sheets: uploaded against a won job, kept in the rep's SharePoint folder ("Job sheets") ----------
 const jsTemp = {};   // practice / not signed in: files stay only until the page closes
 const fmtSize = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
-const jobSheetsOf = root => (root.jobSheets || []).concat(jsTemp[root.id] || []);
+const DEMO_ORDER_B64 = '';   /*PRACTICE_ORDER*/
+let demoOrderUrl = '';
+function demoOrder(root) {
+  if (!PRACTICE || !DEMO_ORDER_B64 || !root.demo || root.data.ref !== 'B115') return [];
+  if (!demoOrderUrl) { const bin = atob(DEMO_ORDER_B64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); demoOrderUrl = URL.createObjectURL(new Blob([u], { type:'application/pdf' })); }
+  return [{ name:'Order 60115 (example).pdf', url:demoOrderUrl, size:Math.round(DEMO_ORDER_B64.length * 3 / 4), at:root.outcomeAt || root.created || Date.now(), temp:true, demo:true }];
+}
+const jobSheetsOf = root => (root.jobSheets || []).concat(jsTemp[root.id] || [], demoOrder(root));
 function jobSheetHTML(root) {
   const list = jobSheetsOf(root);
   return `<div class="js-box"><div class="js-h"><b>Job sheet</b>
     <label class="btn sm primary js-up">${list.length ? '+ Add another' : 'Upload job sheet'}<input type="file" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" multiple hidden data-jsup></label>
     <span class="js-msg" data-jsmsg></span></div>
-    ${list.length ? `<ul class="js-list">${list.map((f, i) => `<li><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a><small>${fmtSize(f.size || 0)} · ${fmtD(f.at)}</small><button type="button" class="btn x sm" data-jsdel="${i}" title="Remove">✕</button></li>`).join('')}</ul>`
+    ${list.length ? `<ul class="js-list">${list.map((f, i) => `<li><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a><small>${fmtSize(f.size || 0)} · ${fmtD(f.at)}${f.demo ? ' · example' : ''}</small>${f.demo ? '' : `<button type="button" class="btn x sm" data-jsdel="${i}" title="Remove">✕</button>`}</li>`).join('')}</ul>`
       : '<p class="js-none"><span class="nojs">⚠ Job sheet not uploaded</span> Upload the signed job sheet (PDF or a photo) so the office has it for repairs.</p>'}</div>`;
 }
 const safeName = s => String(s || '').replace(/[\\/:*?"<>|#%{}~&]/g, '-').replace(/\s+/g, ' ').trim();
@@ -2099,7 +2120,7 @@ async function removeJobSheet(root, i) {
 // =====================================================================
 const thCache = {}, thOpen = {}, thBodies = {}, thComp = {};
 let thBusy = false;
-const TH_SEL = 'id,subject,from,toRecipients,ccRecipients,sentDateTime,receivedDateTime,bodyPreview,hasAttachments,webLink,conversationId,isDraft,parentFolderId';
+const TH_SEL = 'id,subject,from,toRecipients,ccRecipients,sentDateTime,receivedDateTime,bodyPreview,hasAttachments,webLink,conversationId,isDraft,parentFolderId,internetMessageId';
 function thAddrs(root) {
   const fam = familyOf(root), d = latestOf(fam).data, set = new Set();
   splitAddrs(d.clientEmail).forEach(a => set.add(a.toLowerCase()));
@@ -2131,7 +2152,7 @@ function thNorm(m) {
   return { id:m.id, me:thIsMe(m), fromName:from.name || from.address || '', fromAddr:from.address || '', at:thWhen(m),
     to:(m.toRecipients || []).map(r => r.emailAddress.name || r.emailAddress.address).join(', '),
     cc:(m.ccRecipients || []).map(r => r.emailAddress.name || r.emailAddress.address).join(', '),
-    subject:m.subject || '(no subject)', preview:m.bodyPreview || '', att:m.hasAttachments, link:m.webLink || '', conv:m.conversationId, live:true };
+    subject:m.subject || '(no subject)', preview:m.bodyPreview || '', att:m.hasAttachments, link:m.webLink || '', conv:m.conversationId, imid:m.internetMessageId || '', live:true };
 }
 async function fetchThread(root) {
   await getSentFolder();
@@ -2148,16 +2169,47 @@ async function fetchThread(root) {
   return [...found.values()].map(thNorm).sort((a, b) => b.at - a.at);
 }
 const thLive = root => !!account && !root.demo && !PRACTICE && !viewRep;
-async function loadThread(root, force) {
+const thSig = c => c ? (c.err || '') + '|' + (c.msgs || []).map(m => m.id).join(',') : '';
+async function loadThread(root, force, quiet) {
   const c = thCache[root.id];
   if (!thLive(root)) { thCache[root.id] = { msgs:thDemo(root), at:Date.now(), demo:true }; return renderThread(); }
-  if (thBusy || (!force && c && Date.now() - c.at < 60000)) return renderThread();
-  thBusy = true; renderThread(true);
+  if (thBusy || (!force && c && Date.now() - c.at < 20000)) return quiet ? null : renderThread();
+  thBusy = true; if (!quiet) renderThread(true);
+  const before = thSig(c);
   try { thCache[root.id] = { msgs:await fetchThread(root), at:Date.now() }; }
   catch (e) { thCache[root.id] = { msgs:(c && c.msgs) || [], at:Date.now(), err:authError(e) }; }
   thBusy = false;
-  if (profId === root.id) renderThread();
+  const got = thSyncReplies(root);
+  if (profId === root.id && (!quiet || thSig(thCache[root.id]) !== before)) renderThread();
+  if (got) { if (profId === root.id) renderProfile(); if (!$('listView').hidden) renderList(); if (cur) renderStatus(); }
 }
+// Customer emails found in the thread that reply-checking hadn't counted yet (e.g. a reply to an email
+// you sent from Outlook) are added as replies, so the status and follow-ups know about them too.
+function thSyncReplies(root) {
+  const fam = familyOf(root), sends = jobSends(fam); if (!sends.length) return false;
+  const first = sends[0].at, rec = latestOf(fam), known = new Set(jobReplies(fam).map(x => x.key)).add('');
+  let added = 0;
+  ((thCache[root.id] || {}).msgs || []).forEach(m => {
+    if (m.me || !m.live || m.at <= first) return;
+    if (known.has(m.imid || m.id) || known.has(m.id) || jobReplies(fam).some(x => Math.abs(x.at - m.at) < 90000 && String(x.email || '').toLowerCase() === m.fromAddr.toLowerCase())) return;
+    rec.replies.push({ key:m.imid || m.id, from:m.fromName || m.fromAddr, email:m.fromAddr.toLowerCase(), at:m.at, preview:(m.preview || '').slice(0, 400), link:m.link || '' });
+    if (profId !== root.id) rec.unseen = (rec.unseen || 0) + 1;
+    added++;
+  });
+  if (added) { rec.updated = Date.now(); saveRecs(); }
+  return added > 0;
+}
+// While a customer window is open, look for new emails every 30 seconds.
+setInterval(() => {
+  if (!profId || $('profile').hidden || document.hidden) return;
+  const root = recs.find(r => r.id === profId);
+  if (root && thLive(root)) loadThread(root, true, true);
+}, 30000);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !profId) return;
+  const root = recs.find(r => r.id === profId);
+  if (root && thLive(root)) loadThread(root, true, true);
+});
 const initials = s => String(s || '?').replace(/[^A-Za-zÀ-ÿ' ]/g, ' ').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
 function thComposer(root) {
   const c = thComp[root.id] || (thComp[root.id] = { mode:'reply', target:'', text:'', files:[] });
@@ -2188,6 +2240,8 @@ function renderThread(loading) {
   const note = !account && !root.demo && !PRACTICE ? '<p class="th-note">Connect Outlook to see the full email thread and reply from here.</p>'
     : viewRep ? '<p class="th-note">These emails are in the rep’s own Outlook. You’re seeing what the quote manager recorded.</p>'
     : (root.demo || PRACTICE) ? '<p class="th-note">Practice: the thread is made up from the example, and nothing is really sent.</p>' : '';
+  const act = document.activeElement, focusKey = act && box.contains(act) ? ['data-thtext', 'data-thto', 'data-thsubj'].find(k => act.hasAttribute(k)) : null;
+  const sel = focusKey && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
   box.innerHTML = `<div class="th-head"><div class="lbl" style="margin:0">Emails <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500">${msgs.length ? msgs.length : ''}</span></div>
       ${thLive(root) ? `<button type="button" class="btn sm" data-threfresh ${loading || thBusy ? 'disabled' : ''}>${loading || thBusy ? 'Loading…' : '↻ Refresh'}</button>` : ''}</div>
     ${note}${c && c.err ? `<p class="err" style="margin:0">Couldn’t load the emails: ${esc(c.err)}</p>` : ''}
@@ -2204,6 +2258,7 @@ function renderThread(loading) {
         <div class="em-act">${viewRep ? '' : `<button type="button" class="lnk" data-emreply="${esc(m.id)}">↩ Reply</button><button type="button" class="lnk" data-emreplyall="${esc(m.id)}">↩ Reply all</button>`}${m.link ? `<a class="lnk" href="${esc(m.link)}" target="_blank" rel="noopener">Open in Outlook</a>` : ''}</div>
       </div>`;
     }).join('') || (loading || thBusy ? '<p class="hint">Loading emails from Outlook…</p>' : '<p class="hint">No emails with this customer yet.</p>')}</div>`;
+  if (focusKey) { const el = box.querySelector(`[${focusKey}]`); if (el) { el.focus(); if (sel) try { el.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
   box.querySelectorAll('[data-embody]').forEach(f => {
     const id = f.closest('[data-emid]').dataset.emid, b = thBodies[id];
     f.srcdoc = `<base target="_blank"><style>body{margin:0;font:13px/1.45 Calibri,Arial,sans-serif;color:#22263a;word-wrap:break-word}img{max-width:100%;height:auto}</style>${b.html}`;
@@ -2430,7 +2485,7 @@ function showList() {
 }
 function setReadOnly(on) {
   document.querySelectorAll('#form input, #form select, #form textarea, #form button').forEach(el => {
-    if (el.closest('#revBanner') || el.closest('#statusSec')) return;
+    if (el.closest('#revBanner') || el.closest('#statusSec') || el.id === 'portalBtn') return;
     el.disabled = on;
   });
 }
@@ -2520,10 +2575,10 @@ function renderList() {
         ? `<span class="clock"></span><b>${fmtDay(fs.next)}</b><div class="sub2">${FU_LABEL[fs.freq]} · ${fs.sent} of ${fs.max} sent</div>`
         : `<span class="off">${esc(fs.label)}</span>`;
       const repOn = lastRep && lastRep.rec !== latest ? ` · on ${esc(displayRef(lastRep.rec.data))}` : '';
-      return `<tr class="${un ? 'newreply' : ''}" data-open="${latest.id}">
+      return `<tr class="${un ? 'newreply' : ''}" data-open="${latest.id}" data-root="${root.id}" title="Open the customer window">
         <td>${pill(st)}${un ? `<br><span class="newb">${un} NEW</span>` : ''}${st === 'won' && !jobSheetsOf(root).length ? `<br><button type="button" class="nojs" data-profile="${root.id}" title="Open to upload the job sheet">⚠ No job sheet</button>` : ''}</td>
         <td class="ref">${esc(d.ref || '—')}${num(d.rev) ? `<span class="revtag">Rev ${num(d.rev)}</span>` : ''}</td>
-        <td><button type="button" class="cust" data-profile="${root.id}">${esc(d.client || '(no name)')}</button>${d.jobRef ? `<div class="sub2"><i>Job Ref: ${esc(d.jobRef)}</i></div>` : addr1 ? `<div class="sub2">${esc(addr1)}</div>` : ''}</td>
+        <td><button type="button" class="cust" data-openq="${latest.id}" title="Open the quote">${esc(d.client || '(no name)')}</button>${d.jobRef ? `<div class="sub2"><i>Job Ref: ${esc(d.jobRef)}</i></div>` : addr1 ? `<div class="sub2">${esc(addr1)}</div>` : ''}</td>
         <td class="hide-sm">${fmtDate(d.date)}</td>
         <td class="n">${priceSpan(d)}</td>
         <td class="hide-sm">${lastSend ? fmtD(lastSend.at) : '—'}</td>
@@ -2572,8 +2627,8 @@ function openProfile(rootId) {
   const fam = familyOf(root);
   if (jobUnseen(fam)) { fam.forEach(x => { x.unseen = 0; }); saveRecs(); }
   $('profBack').hidden = false; $('profile').hidden = false;
-  renderProfile();
-  loadThread(root);
+  renderProfile(); $('profile').scrollTop = 0;
+  loadThread(root, true);
   if (!$('listView').hidden) renderList();
   updateTitle();
   setTimeout(() => { const x = $('profile').querySelector('.x'); if (x) x.focus(); }, 30);
@@ -2596,11 +2651,14 @@ function renderProfile() {
   reps.forEach(x => events.push({ at:x.at, k:'inb', t:`<b>Reply from ${esc(x.from)}</b>${x.preview ? ` · “${esc(x.preview.slice(0, 90))}${x.preview.length > 90 ? '…' : ''}”` : ''}` }));
   (root.fuLog || []).filter(l => !l.pending).forEach(l => events.push({ at:l.at, k:'auto', t:`<b>Follow-up ${l.n} sent</b> (automatic${l.late ? ', late because the page was closed' : ''})` }));
   events.sort((a, b) => b.at - a.at);
+  const fa = document.activeElement, keepScroll = $('profile').scrollTop;
+  const fk = fa && fa.closest && fa.closest('#thBox') ? ['data-thtext', 'data-thto', 'data-thsubj'].find(k => fa.hasAttribute(k)) : null;
+  const keepF = fk ? [fk, fa.selectionStart, fa.selectionEnd] : null;
   $('profile').innerHTML = `
     <div class="dhead">
       <button type="button" class="x" data-close aria-label="Close profile">✕</button>
       <div class="lbl" style="margin-bottom:2px">Customer${root.demo ? ' · example' : ''}</div>
-      <h2>${esc(d.client || '(no name)')}</h2>
+      <div class="dtitle"><h2>${esc(d.client || '(no name)')}</h2><button type="button" class="btn sm" data-openrec="${latest.id}">Open quote${fam.length > 1 ? ' (' + esc(displayRef(latest.data) || 'latest') + ')' : ''}</button></div>
       <div class="dmeta">${meta || '<span>No contact details yet.</span><b></b>'}</div>
     </div>
     <div class="dbody">
@@ -2646,6 +2704,8 @@ function renderProfile() {
       </div>
     </div>`;
   renderThread();
+  if (keepF) { const el = $('profile').querySelector(`#thBox [${keepF[0]}]`); if (el) { el.focus(); try { el.setSelectionRange(keepF[1], keepF[2]); } catch (e) {} } }
+  if (keepScroll != null) $('profile').scrollTop = keepScroll;
 }
 $('profile').addEventListener('click', e => {
   const root = recs.find(r => r.id === profId); if (!root) return;
@@ -2686,6 +2746,7 @@ $('profile').addEventListener('input', e => {
 $('profBack').onclick = closeProfile;
 $('revBanner').addEventListener('click', e => { const op = e.target.closest('[data-openrec]'); if (op) location.hash = '#q-' + op.dataset.openrec; });
 $('statusBody').addEventListener('click', e => { const pb = e.target.closest('[data-profile]'); if (pb) openProfile(pb.dataset.profile); });
+$('portalBtn').onclick = () => { if (cur) openProfile(familyOf(cur)[0].id); };
 
 // ---------- quote actions ----------
 function lastSigner() {
@@ -2733,8 +2794,10 @@ $('listView').addEventListener('click', e => {
   if (e.target.closest('#helloName')) { openMe(); setTimeout(() => $('meNameIn').focus(), 30); return; }
   const f = e.target.closest('[data-filter]');
   if (f) { filter = f.dataset.filter; renderList(); return; }
+  const oq = e.target.closest('[data-openq]');
+  if (oq) { e.stopPropagation(); location.hash = '#q-' + oq.dataset.openq; return; }
   const row = e.target.closest('[data-open]');
-  if (row) location.hash = '#q-' + row.dataset.open;
+  if (row) openProfile(row.dataset.root);   // the rest of the row opens the customer window
 });
 $('search').addEventListener('input', renderList);
 $('statusBody').addEventListener('change', e => {
@@ -3790,7 +3853,7 @@ function mapSources() {
   const own = viewRep ? myRecs : recs;
   if (cloud.office && !asRep) return cloud.folders.map(f => ({ key:f.name.toLowerCase(), folder:f, mine:f === cloud.mine,
     name:f === cloud.mine ? (myName || repInfo(f.name).name) : repInfo(f.name).name, list:f === cloud.mine ? own : (repCache[f.name] || {}).recs }));
-  return [{ key:cloud.me || 'me', folder:cloud.mine, mine:true, name:myName || 'You', list:own }];
+  return [{ key:cloud.me || 'me', folder:cloud.mine, mine:true, name:myName || (settings.userName || '').trim() || 'You', list:own }];
 }
 function mapJobs() {
   const out = [], p = $('mapPeriod').value;
@@ -3993,7 +4056,7 @@ function wonJobs() {
 function renderRepairs() {
   if (view !== 'repairs') return;
   if (!repairs) { $('rpSheets').innerHTML = '<p class="hint" style="padding:12px">Loading repair sheets from SharePoint…</p>'; return; }
-  $('rpEmailLine').innerHTML = `Repairs email: <b>${esc(repairsEmail || REPAIRS_EMAIL_STD)}</b>. Open a repair sheet, then View order → Send to repairs. You can change the address there.`;
+  $('rpEmailLine').innerHTML = `Repairs email: <b>${esc(repairsEmail || REPAIRS_EMAIL_STD)}</b>. Open a repair sheet and click ✉ Send to repairs. You can change the address there.`;
   const q = $('rpSearch').value.trim().toLowerCase();
   const hit = (...xs) => !q || xs.join(' ').toLowerCase().includes(q);
   const counts = { open:0, booked:0, done:0 }; repairs.forEach(r => counts[r.status || 'open']++);
@@ -4218,7 +4281,7 @@ $('rpInc').onclick = () => {
   if ((s.jobSheets || []).length) { s.jobSheets = []; renderRpJS(); return; }
   const j = jobOfSheet(s), avail = j ? jobSheetsOf(j.root) : [];
   if (!avail.length) { toast('No job sheet uploaded for this job yet'); renderRpJS(); return; }
-  s.jobSheets = avail.map(f => ({ id:f.id, name:f.name, url:f.url, size:f.size }));
+  s.jobSheets = avail.map(f => ({ id:f.id, name:f.name, url:f.url, size:f.size, temp:f.temp }));
   renderRpJS();
 };
 
@@ -4236,7 +4299,8 @@ function ovDefaultText(s) {
 }
 function ovTab(t) {
   document.querySelectorAll('#ovModal [data-ovt]').forEach(b => b.classList.toggle('on', b.dataset.ovt === t));
-  $('ovView').hidden = t !== 'order'; $('ovSend').hidden = t !== 'send';
+  $('ovView').hidden = t !== 'order'; $('ovSend').hidden = t !== 'send'; $('ovSheet').hidden = t !== 'sheet';
+  if (t === 'sheet') renderOvSheet();
 }
 async function ovShow(i) {
   ovIdx = i; const f = ovFiles[i];
@@ -4281,7 +4345,7 @@ async function repairSheetPdf(s) {
     return new Uint8Array(pdf.output('arraybuffer'));
   } finally { fr.remove(); }
 }
-$('rpView').onclick = () => openOrder('order');
+$('rpView').onclick = () => openOrder('sheet');
 $('ovClose').onclick = () => { $('ovModal').hidden = true; };
 $('ovModal').addEventListener('click', e => {
   const t = e.target.closest('[data-ovt]'); if (t) return ovTab(t.dataset.ovt);
@@ -4426,6 +4490,61 @@ $('ovPhotos').addEventListener('click', async e => {
     renderOvPhotos(); renderRpJS(); toast('Photo removed');
   } catch (err) { toast('Not removed: ' + err.message); }
 });
+
+// ---------- repair sheet: preview tab, download as PDF ----------
+function renderOvSheet() {
+  const s = rpEdit; if (!s) return;
+  const f = $('ovSheetFrame');
+  f.srcdoc = repairSheetHTML(readRepairForm()).replace('<body>', '<body style="background:#fff;padding:12mm">');
+}
+async function repairPdfDoc(s, withExtras, onStep) {
+  if (!window.html2canvas || !window.jspdf) throw new Error('The PDF tools did not load. Reload the page and try again.');
+  const fr = document.createElement('iframe');
+  fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0';
+  document.body.appendChild(fr);
+  let pdf;
+  try {
+    const doc = fr.contentDocument; doc.open(); doc.write(repairSheetHTML(s)); doc.close();
+    doc.body.style.padding = '12mm'; doc.body.style.background = '#fff';
+    await Promise.all([...doc.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+    const canvas = await html2canvas(doc.body, { scale:2, backgroundColor:'#ffffff', logging:false, windowWidth:794, windowHeight:1123 });
+    pdf = new window.jspdf.jsPDF({ unit:'mm', format:'a4', compress:true });
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, Math.min(297, canvas.height * 210 / canvas.width));
+    pdf.setProperties({ title:'Repair Sheet ' + (s.jobNo || ''), author:'Sean Doyle Windows Ltd' });
+  } finally { fr.remove(); }
+  if (withExtras) {
+    const files = (s.jobSheets || []).concat(s.photos || []);
+    if (files.length) {
+      if (onStep) onStep('Adding the order and photos…');
+      for (const pg of await jobSheetPages(files)) {
+        if (!pg.img) continue;
+        const im = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = pg.img; });
+        if (!im) continue;
+        const land = im.width > im.height;
+        pdf.addPage('a4', land ? 'landscape' : 'portrait');
+        const W = land ? 297 : 210, H = land ? 210 : 297, m = 8, k = Math.min((W - 2 * m) / im.width, (H - 2 * m) / im.height);
+        const w = im.width * k, h = im.height * k;
+        pdf.addImage(pg.img, 'JPEG', (W - w) / 2, (H - h) / 2, w, h);
+      }
+    }
+  }
+  return pdf;
+}
+async function downloadRepairPdf(s, btn) {
+  const old = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Making PDF…'; }
+  try {
+    const pdf = await repairPdfDoc(s, true, t => { if (btn) btn.textContent = t; });
+    const name = `Repair sheet ${safeName(s.jobNo || '')} ${safeName(s.client || '')}`.replace(/\s+/g, ' ').trim() + '.pdf';
+    pdf.save(name);
+    toast('PDF downloaded');
+  } catch (e) { toast('Couldn’t make the PDF: ' + e.message); }
+  if (btn) { btn.disabled = false; btn.textContent = old; }
+}
+$('rpDownload').onclick = () => downloadRepairPdf(readRepairForm(), $('rpDownload'));
+$('rpSendBtn').onclick = () => openOrder('send');
+$('ovSheetPrint').onclick = () => printRepair(readRepairForm()).catch(e => toast('Couldn’t print: ' + e.message));
+$('ovSheetPdf').onclick = () => downloadRepairPdf(readRepairForm(), $('ovSheetPdf'));
 
 // ---------- office: Rates tab ----------
 let savedBook = '';
@@ -4888,7 +5007,7 @@ async function checkReplies(manual) {
     const cutoff = Date.now() - 180 * 86400000;
     for (const r of recs) {
       if (r.demo) continue;
-      const threads = r.sends.concat(isRoot(r) ? (r.fuLog || []).filter(l => !l.pending) : []);
+      const threads = r.sends.concat(isRoot(r) ? (r.fuLog || []).filter(l => !l.pending).concat((r.mailConvs || []).map(c => ({ conversationId:c, at:Date.now() }))) : []);
       for (const s of threads) {
         if (!s.conversationId || s.at < cutoff) continue;
         const f = encodeURIComponent(`conversationId eq '${s.conversationId.replace(/'/g, "''")}'`);
@@ -4915,6 +5034,7 @@ async function checkReplies(manual) {
     settings.lastCheck = Date.now(); saveSettings();
     if (fresh.length || fixed) saveRecs();
     if (fresh.length) notifyReplies(fresh);
+    if (fresh.length && profId) { const pr = recs.find(r => r.id === profId); if (pr && fresh.some(([r]) => familyOf(r)[0] === pr)) loadThread(pr, true, true); }
     if (manual) toast(fresh.length ? `${fresh.length} new ${fresh.length === 1 ? 'reply' : 'replies'}` : 'No new replies');
   } catch (e) {
     console.error(e);
