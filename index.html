@@ -706,6 +706,20 @@ table.st-tb tr[data-strep] { cursor:pointer; } table.st-tb tr[data-strep]:hover 
 .mf-nosheet { margin:0; }
 .mf-won { margin:0; font-size:12.5px; background:#e9f7ef; border:1px solid #b9e2c8; color:#14532d; border-radius:8px; padding:8px 11px; }
 .em-card { display:grid; gap:10px; }
+.ad-ticks { display:flex; gap:8px 18px; flex-wrap:wrap; padding:8px 10px; border:1px solid var(--ui-line); border-radius:8px; background:#fff; }
+.ad-tick { display:flex !important; gap:8px; align-items:center; font-weight:600; color:var(--navy); font-size:13.5px; cursor:pointer; }
+.ad-tick input { width:18px !important; height:18px; accent-color:var(--navy); margin:0; flex:none; }
+.ad-tick small { color:var(--muted); font-weight:500; }
+.ad-cust { border:1px solid var(--ui-line); border-radius:8px; padding:10px 12px; display:grid; gap:8px; background:#fffdf5; }
+.ad-ch { font-weight:700; color:var(--navy); font-size:13px; }
+.ad-box { margin-top:14px; border:1px solid var(--ui-line); border-radius:10px; padding:12px 14px; background:var(--tint); display:grid; gap:10px; justify-items:start; }
+.ad-box > div:first-child { display:grid; gap:2px; }
+.ad-box b { color:var(--navy); }
+.ad-t { border-collapse:collapse; width:100%; }
+.ad-t th { text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:4px 8px; }
+.ad-t td { padding:4px 8px; }
+.ad-t input { width:100%; }
+.ad-t input.n { text-align:right; max-width:140px; }
 .nojs { display:inline-block; margin-top:3px; font:inherit; font-size:11px; font-weight:700; color:#b42318; background:#fef0ee; border:1px solid #f5c2bc; border-radius:10px; padding:1px 8px; white-space:nowrap; cursor:default; }
 button.nojs { cursor:pointer; }
 button.nojs:hover { border-color:#b42318; }
@@ -1141,7 +1155,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 19 Nov 2026 · rep name in thread</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 20 Nov 2026 · composite add-ons</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -1273,7 +1287,7 @@ function itemCost(it, fam, ctx) {
       return v * qty * uplift(it);
     }
     const c = catOf(it), x = itemOf(it); if (!c || !x) return 0;
-    const each = num(priceArr(x)[tierFor(c, ctx)]) * (c.perM2 ? num(it.w) * num(it.h) : 1);
+    const each = num(priceArr(x)[tierFor(c, ctx)]) * (c.perM2 ? num(it.w) * num(it.h) : 1) + addonsCost(it, c, ctx);
     return each * qty * uplift(it);
   }
   if (it.mode === 'sqm') return num(it.w) * num(it.h) * qty * rateOf(it.rate) * uplift(it);
@@ -1542,6 +1556,18 @@ function itemDesc(it) {
   const x = itemOf(it); if (!c || !x) return '';
   let t = c.fmt === 'prefix' ? `${c.prefix || ''} ${lcItem(x.name)}${c.suffix || ''}`.trim() : `${c.name}, ${lcItem(x.name)}`;
   if (c.perM2 && num(it.w) && num(it.h)) t += ` (${num(it.w)}m × ${num(it.h)}m)`;
+  const ad = catAddons(c).filter(a => (it.addons || []).includes(a.id)).map(a => String(a.name).trim().replace(/^./, m => m.toLowerCase()));
+  if (it.cust && String(it.custDesc || '').trim()) ad.push(String(it.custDesc).trim().replace(/^./, m => m.toLowerCase()));
+  if (ad.length) t += ' with ' + (ad.length > 1 ? ad.slice(0, -1).join(', ') + ' and ' + ad[ad.length - 1] : ad[0]);
+  return t;
+}
+// Add-ons: tick boxes the office sets per category (e.g. Sidelights +€400, Arch +€1,500), the same amount on every range.
+// Plus a "Custom price" tick box where the rep types an extra amount for each price box.
+const addonPrice = a => a.price !== undefined ? num(a.price) : num(((a.prices || {})[(typeof myRegion !== 'undefined' && myRegion) || 'dublin']));
+const catAddons = c => ((c && c.addons) || []).filter(a => String(a.name || '').trim() && (PRACTICE || !isRepUser() || addonPrice(a) > 0));
+function addonsCost(it, c, ctx) {
+  let t = catAddons(c).filter(a => (it.addons || []).includes(a.id)).reduce((s, a) => s + addonPrice(a), 0);
+  if (it.cust) { const v = ctx && it.cbp && it.cbp[ctx.key] !== undefined && it.cbp[ctx.key] !== '' ? it.cbp[ctx.key] : Object.values(it.cbp || {}).find(x => x !== '' && x !== undefined); t += num(v); }
   return t;
 }
 const firstBp = it => { const v = Object.values(it.bp || {}).find(x => x !== '' && x !== undefined); return num(v); };
@@ -1618,6 +1644,7 @@ function catItemHTML(it, i) {
         <option value="" ${!it.itemId ? 'selected' : ''}>Choose…</option>
         ${availItems(c).map(y => `<option value="${esc(y.id)}" ${y.id === it.itemId ? 'selected' : ''} ${PRACTICE && !isPriced(y) ? 'disabled' : ''}>${esc(y.name)}${c.perM2 ? ' (priced per m²)' : ''}${!isPriced(y) ? (PRACTICE ? ' – not set by office' : !isRepUser() ? ' · no price yet' : '') : ''}</option>`).join('')}
         ${c.repPrice ? `<option value="__rep" ${it.itemId === '__rep' ? 'selected' : ''}>Rep price (type your own price)…</option>` : ''}</select></label>` : ''}
+    ${x && !own ? addonsHTML(it, i, c) : ''}
     ${own ? `<label class="f">Description on the quote<span class="micwrap"><input data-list="items" data-i="${i}" data-f="desc" value="${esc(it.desc || '')}" placeholder="${it.cat === 'custom' ? 'e.g. Bi-fold door, 3 panel, anthracite grey' : esc(c ? c.name : '')}">${MIC}</span></label>` : ''}
     ${it.cat && (own || x) ? `<div class="row">
       <label class="f">Glazing<select data-list="items" data-i="${i}" data-f="glazing">
@@ -1628,6 +1655,14 @@ function catItemHTML(it, i) {
       <div class="bpgrid">${boxes.map(r => `<label class="f">${esc((q.boxMode === 'products' ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-list="items" data-i="${i}" data-f="bp" data-bpbox="${esc(r.key)}" value="${esc((it.bp || {})[r.key] ?? '')}"></label>`).join('')}</div>` : ''}
     <div class="calc" data-itemcalc="${i}"></div>
   </div>`;
+}
+function addonsHTML(it, i, c) {
+  const ads = catAddons(c), rep = isRepUser();
+  const tick = (f, extra, label, on) => `<label class="ad-tick"><input type="checkbox" data-list="items" data-i="${i}" data-f="${f}" ${extra} ${on ? 'checked' : ''}> ${label}</label>`;
+  return `<div class="ad-ticks">${ads.map(a => tick('addon', `data-aid="${esc(a.id)}"`, esc(a.name) + (rep ? '' : ` <small>+${eur(addonPrice(a))}</small>`), (it.addons || []).includes(a.id))).join('')}${tick('cust', '', 'Custom price', it.cust)}</div>
+    ${it.cust ? `<div class="ad-cust"><div class="ad-ch">Custom price: extra added to each price box (€)</div>
+      <label class="f">What it is for (shown on the quote)<input data-list="items" data-i="${i}" data-f="custDesc" value="${esc(it.custDesc || '')}" placeholder="e.g. Glazed side panel with leaded glass"></label>
+      <div class="bpgrid">${boxRows().map(r => `<label class="f">${esc((q.boxMode === 'products' ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-list="items" data-i="${i}" data-f="cbp" data-bpbox="${esc(r.key)}" value="${esc((it.cbp || {})[r.key] ?? '')}"></label>`).join('')}</div></div>` : ''}`;
 }
 function catItemCalc(it) {
   if (!it.cat) return '';
@@ -1995,7 +2030,10 @@ $('form').addEventListener('input', e => {
     const it = q[ds.list][+ds.i];
     if (ds.f === 'pp') { it.pp = it.pp || {}; it.pp[ds.fam] = el.value; }
     else if (ds.f === 'bp') { it.bp = it.bp || {}; it.bp[ds.bpbox] = el.value; }
-    else if (ds.f === 'cat') { it.cat = el.value; it.itemId = ''; if (el.value === 'custom') it.desc = it.desc || ''; renderItems(); }
+    else if (ds.f === 'cbp') { it.cbp = it.cbp || {}; it.cbp[ds.bpbox] = el.value; }
+    else if (ds.f === 'addon') { const s0 = new Set(it.addons || []); el.checked ? s0.add(ds.aid) : s0.delete(ds.aid); it.addons = [...s0]; }
+    else if (ds.f === 'cust') { it.cust = el.checked; renderItems(); }
+    else if (ds.f === 'cat') { it.cat = el.value; it.itemId = ''; it.addons = []; it.cust = false; it.cbp = {}; if (el.value === 'custom') it.desc = it.desc || ''; renderItems(); }
     else if (ds.f === 'itemId') { it.itemId = el.value; renderItems(); }
     else it[ds.f] = el.value;
     if (ds.rerender) renderItems();
@@ -3511,7 +3549,7 @@ function buildExtras() {
   if (!base) priceDirty = true;
   priceBook.extras = struct;
 }
-const extrasFor = k => (priceBook.extras || []).map(c => Object.assign({}, c, { items:(c.items || []).filter(x => String(x.name || '').trim()).map(x => ({ id:x.id, name:x.name, prices:((x.prices || {})[k] || ['', '', '']).slice(0, 3) })) }));
+const extrasFor = k => (priceBook.extras || []).map(c => Object.assign({}, c, { addons:(c.addons || []).filter(a => String(a.name || '').trim()).map(a => ({ id:a.id, name:a.name, price:(a.prices || {})[k] ?? '' })), items:(c.items || []).filter(x => String(x.name || '').trim()).map(x => ({ id:x.id, name:x.name, prices:((x.prices || {})[k] || ['', '', '']).slice(0, 3) })) }));
 async function savePricingToCloud() {
   const btn = $('savePricing'); btn.disabled = true; btn.textContent = 'Saving…';
   try {
@@ -4890,7 +4928,37 @@ function renderExtras() {
     ${c.items.map((x, xi) => `<tr><td><input type="text" data-exname="${xi}" value="${esc(x.name)}" style="width:100%;min-width:180px;text-align:left" aria-label="Item name"></td>
       ${[0, 1, 2].map(t => `<td class="dr">${keys.map(k => `<span class="dl">${REGIONS[k].label[0]}</span><input type="number" step="1" min="0" data-exp="${k}.${xi}.${t}" value="${esc(((x.prices || {})[k] || [])[t] ?? '')}" aria-label="${esc(x.name)} ${esc(cols[t][0])} ${REGIONS[k].label}">`).join('')}</td>`).join('')}
       <td><button class="btn x" type="button" data-exdel="${xi}" aria-label="Remove ${esc(x.name)}">✕</button></td></tr>`).join('')}
-    <tr><td colspan="5"><button class="btn sm" type="button" data-exadd>+ Add item</button> <span class="hint" style="margin-left:8px">D = Dublin, R = Roscommon. An item only shows to reps once all its prices are filled in.</span></td></tr></tbody></table></div>`;
+    <tr><td colspan="5"><button class="btn sm" type="button" data-exadd>+ Add item</button>${sheetFor(c) ? ` <button class="btn sm primary" type="button" data-exfill>${sheetFor(c).items.length ? `Fill in ${esc(sheetFor(c).label)} from the price sheet` : 'Add Sidelights (€400) and Arch (€1,500)'}</button>` : ''} <span class="hint" style="margin-left:8px">D = Dublin, R = Roscommon. An item only shows to reps once all its prices are filled in.</span></td></tr></tbody></table></div>
+    <div class="ad-box"><div><b>Add-ons (tick boxes for the rep)</b><span class="hint">Each one adds the same amount to every range. Reps see the tick box, not the price. Reps also always get a “Custom price” tick box.</span></div>
+      ${(c.addons || []).length ? `<table class="ad-t"><thead><tr><th>Add-on</th>${keys.map(k => `<th>${REGIONS[k].label} €</th>`).join('')}<th></th></tr></thead><tbody>
+      ${(c.addons || []).map((a, ai) => `<tr><td><input type="text" data-adname="${ai}" value="${esc(a.name)}" placeholder="e.g. Sidelights (1.8m wide)"></td>${keys.map(k => `<td><input type="number" step="1" min="0" class="n" data-adp="${k}.${ai}" value="${esc((a.prices || {})[k] ?? '')}"></td>`).join('')}<td><button class="btn x" type="button" data-addel="${ai}" aria-label="Remove add-on">✕</button></td></tr>`).join('')}</tbody></table>` : ''}
+      <button class="btn sm" type="button" data-adadd>+ Add add-on</button></div>`;
+}
+// Price sheets the office sent in (Nov 2026). The sheet price is the middle tier (Greenline);
+// hardwood is €600 less / €400 more either side, Thermo doors €400 either side. Same for Dublin and Roscommon.
+const SHEETS = {
+  hardwood:{ label:'hardwood doors', test:/hardwood/i, down:600, up:400, items:[['Tobias',7500],['Samson',7500],['Cosmos',7500],['Lennox',7500],['Konrad',7500],['Mason',7500],['Archer',7500],['Dillon',7000],['Franklin',6500],['Hunter',6500],['Montrose',5500],['Celest - No Arch',5500],['Hudson',4300],['Avolan',4500],['Sterling',3200],['Jasper',2800],['Jasmine in Std Frame',2500],['Simone Over 2100mm',5300],['Simone Up To 2100mm',4500],['Albert Up To 2100mm',3500],['Albert Over 2100mm',4000],['Leto Up To 2100mm',3500],['Leto Over 2100mm',4000]] },
+  thermo:{ label:'Thermo doors', test:/thermo/i, down:400, up:400, items:['Achilles','Eris','Apollo','Castor','Atlanta','Dione','Clio','Echo','Solis','Aurora','Everest'].map(n => [n, 3200]),
+    addons:[['Sidelights (1.8m wide)', 400], ['Arch', 1500]] },
+  composite:{ label:'composite door add-ons', test:/composite/i, down:0, up:0, items:[], addons:[['Sidelights (1.8m wide)', 400], ['Arch', 1500]] }
+};
+const sheetFor = c => Object.values(SHEETS).find(sh => sh.test.test(c.name || ''));
+function fillFromSheet(c) {
+  const sh = sheetFor(c); if (!sh) return;
+  const keys = Object.keys(REGIONS), uid = () => 'it' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  sh.items.forEach(([name, mid]) => {
+    const tiers = [mid - sh.down, mid, mid + sh.up];
+    let x = c.items.find(y => String(y.name).trim().toLowerCase() === name.toLowerCase());
+    if (!x) { x = { id:uid(), name, prices:{} }; c.items.push(x); }
+    x.prices = Object.fromEntries(keys.map(k => [k, tiers.slice()]));
+  });
+  c.items = c.items.filter(y => String(y.name || '').trim());
+  (sh.addons || []).forEach(([name, price]) => {
+    c.addons = c.addons || [];
+    let a = c.addons.find(y => String(y.name).trim().toLowerCase() === name.toLowerCase());
+    if (!a) { a = { id:'ad' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, prices:{} }; c.addons.push(a); }
+    a.prices = Object.fromEntries(keys.map(k => [k, price]));
+  });
 }
 $('ratesSeg').addEventListener('click', e => {
   const b = e.target.closest('[data-rs]'); if (!b) return;
@@ -4906,12 +4974,17 @@ $('ratesEx').addEventListener('click', e => {
   if (!c) return;
   if (t.hasAttribute('data-exadd')) { c.items.push({ id:'it' + Date.now().toString(36), name:'', prices:Object.fromEntries(Object.keys(REGIONS).map(k => [k, ['', '', '']])) }); renderExtras(); ratesState(); const ns = document.querySelectorAll('[data-exname]'); ns[ns.length - 1].focus(); return; }
   if (t.dataset.exdel !== undefined) { c.items.splice(+t.dataset.exdel, 1); renderExtras(); ratesState(); return; }
+  if (t.hasAttribute('data-exfill')) { fillFromSheet(c); renderExtras(); ratesState(); toast('Filled in. Check the prices, then click Save rates.'); return; }
+  if (t.hasAttribute('data-adadd')) { (c.addons = c.addons || []).push({ id:'ad' + Date.now().toString(36), name:'', prices:Object.fromEntries(Object.keys(REGIONS).map(k => [k, ''])) }); renderExtras(); ratesState(); const ns = document.querySelectorAll('[data-adname]'); ns[ns.length - 1].focus(); return; }
+  if (t.dataset.addel !== undefined) { c.addons.splice(+t.dataset.addel, 1); renderExtras(); ratesState(); return; }
   if (t.hasAttribute('data-exdelcat')) { if (!confirm(`Delete the “${c.name}” category and its ${c.items.length} items? Quotes already sent keep their prices.`)) return; E.splice(E.indexOf(c), 1); exCat = null; renderExtras(); ratesState(); }
 });
 $('ratesEx').addEventListener('input', e => {
   const el = e.target, E = priceBook.extras, c = E.find(x => x.id === exCat); if (!c) return;
   if (el.dataset.exp) { const [k, xi, t] = el.dataset.exp.split('.'); const x = c.items[+xi]; x.prices = x.prices || {}; x.prices[k] = x.prices[k] || ['', '', '']; x.prices[k][+t] = el.value === '' ? '' : num(el.value); el.classList.add('changed'); }
   else if (el.dataset.exname !== undefined) c.items[+el.dataset.exname].name = el.value;
+  else if (el.dataset.adname !== undefined) c.addons[+el.dataset.adname].name = el.value;
+  else if (el.dataset.adp) { const [k, ai] = el.dataset.adp.split('.'); const a = c.addons[+ai]; a.prices = a.prices || {}; a.prices[k] = el.value === '' ? '' : num(el.value); el.classList.add('changed'); }
   else if (el.dataset.exset) {
     const f = el.dataset.exset;
     c[f] = el.type === 'checkbox' ? el.checked : el.value;
