@@ -279,6 +279,13 @@ table.calc td.c { text-align:center; }
 .cust { font:inherit; font-weight:700; color:var(--navy); background:none; border:none; padding:0; cursor:pointer; text-align:left; text-decoration:underline; text-decoration-color:#c5c9da; text-underline-offset:3px; }
 .cust:hover { text-decoration-color:var(--navy); }
 .revtag { display:inline-block; font-size:10.5px; font-weight:800; color:var(--navy); background:#e6e9f5; border-radius:4px; padding:1px 5px; margin-left:4px; vertical-align:1px; }
+.fu-pill { display:inline-block; padding:4px 10px; border-radius:999px; font-weight:700; font-size:12px; white-space:nowrap; }
+.fu-pill.on { background:#dcf3e3; color:#146c35; border:1px solid #9fd9b2; }
+.fu-pill.paused { background:#fff3c4; color:#7a5800; border:1px solid #f0d36b; }
+.fu-pill.grey { background:var(--tint); color:var(--muted); }
+.fu-go { display:block; margin-top:6px; background:#6d28d9; border:1px solid #6d28d9; color:#fff; font-weight:700; font-size:12px; padding:5px 11px; border-radius:8px; cursor:pointer; font-family:inherit; }
+.fu-go:hover { background:#5b21b6; }
+.fubox.flash { outline:3px solid #6d28d9 !important; outline-offset:4px; background:#f5f0ff; }
 .fu { font-size:12px; white-space:nowrap; } .fu b { color:var(--navy); } .fu .off { color:var(--muted); white-space:normal; }
 .clock { display:inline-block; width:12px; height:12px; border:1.6px solid #1d4f9a; border-radius:50%; position:relative; vertical-align:-2px; margin-right:4px; }
 .clock::after { content:""; position:absolute; left:3.6px; top:1.2px; width:1.6px; height:4px; background:#1d4f9a; }
@@ -323,8 +330,8 @@ table.calc td.c { text-align:center; }
 .fnext { font-size:12px; background:#e1eafb; color:#1d4f9a; border-radius:6px; padding:7px 9px; font-weight:600; }
 .fnext.grey { background:var(--tint); color:var(--muted); }
 .fnext.with-btn { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-.btn.resume { background:#15803d; border-color:#15803d; color:#fff; font-weight:700; }
-.btn.resume:hover { background:#116632; border-color:#116632; }
+.btn.resume { background:#6d28d9; border-color:#6d28d9; color:#fff; font-weight:700; }
+.btn.resume:hover { background:#5b21b6; border-color:#5b21b6; }
 .btn.resume:disabled { opacity:.5; cursor:default; }
 .revs { border:1px solid var(--ui-line); border-radius:8px; overflow:hidden; }
 .revs > div { display:grid; grid-template-columns:110px 1fr auto auto; gap:10px; align-items:center; padding:7px 11px; border-bottom:1px solid var(--line); font-size:12.5px; }
@@ -1155,7 +1162,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 20 Nov 2026 · add-ons fix</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 20 Nov 2026 · follow-up colours</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -1246,8 +1253,8 @@ const store = {
 };
 // practice.html is built from this same file with PRACTICE = true: it behaves exactly like a rep's screen, but with example prices and no sign-in or sending.
 const PRACTICE = true;
-DEFAULT_PRICING.extras = [{"id": "composite", "name": "Composite door", "family": "", "fmt": "comma", "perM2": false, "repPrice": true, "items": [{"id": "comp-single", "name": "Single (1m × 2.1m)", "prices": ["", "", ""]}, {"id": "comp-side", "name": "Sidelights (1.8m × 2.1m)", "prices": ["", "", ""]}]}, {"id": "upvcdoors", "name": "uPVC doors", "family": "upvc", "fmt": "prefix", "prefix": "uPVC", "perM2": false, "repPrice": true, "items": [{"id": "upvc-french", "name": "French door", "prices": ["", "", ""]}, {"id": "upvc-single", "name": "Single door", "prices": ["", "", ""]}, {"id": "upvc-patio", "name": "Patio door (2.1m × 2.1m)", "prices": ["", "", ""]}]}, {"id": "aludoors", "name": "Aluminium doors", "family": "alu", "fmt": "prefix", "prefix": "Aluminium", "perM2": false, "repPrice": true, "items": [{"id": "alu-french", "name": "French door", "prices": ["", "", ""]}, {"id": "alu-single", "name": "Single door", "prices": ["", "", ""]}, {"id": "alu-patio", "name": "Patio door (2.1m × 2.1m)", "prices": ["", "", ""]}]}, {"id": "alusliding", "name": "Aluminium sliding doors", "family": "alu", "fmt": "prefix", "prefix": "Aluminium", "suffix": " sliding door", "perM2": true, "repPrice": true, "items": [{"id": "slide-mono", "name": "Monorail", "prices": [400, 500, 550]}, {"id": "slide-duo", "name": "Duo rail", "prices": [550, 600, 650]}, {"id": "slide-triple", "name": "Triple track", "prices": [550, 600, 650]}]}, {"id": "thermos", "name": "Thermos door", "family": "", "fmt": "comma", "perM2": false, "repPrice": true, "items": [{"id": "thermos-single", "name": "Single (1m × 2.1m)", "prices": ["", "", ""]}, {"id": "thermos-side", "name": "Sidelights (1.8m × 2.1m)", "prices": ["", "", ""]}]}];
-let pricing = store.get('sdw-demo-pricing-v5', null) || JSON.parse(JSON.stringify(DEFAULT_PRICING));
+DEFAULT_PRICING.extras = [{"id": "composite", "name": "Composite door", "family": "", "fmt": "comma", "perM2": false, "repPrice": true, "items": [{"id": "comp-single", "name": "Single (1m × 2.1m)", "prices": ["", "", ""]}, {"id": "comp-side", "name": "Sidelights (1.8m × 2.1m)", "prices": ["", "", ""]}], "addons": [{"id": "ad-side", "name": "Sidelights (1.8m wide)", "price": ""}, {"id": "ad-arch", "name": "Arch", "price": ""}]}, {"id": "upvcdoors", "name": "uPVC doors", "family": "upvc", "fmt": "prefix", "prefix": "uPVC", "perM2": false, "repPrice": true, "items": [{"id": "upvc-french", "name": "French door", "prices": ["", "", ""]}, {"id": "upvc-single", "name": "Single door", "prices": ["", "", ""]}, {"id": "upvc-patio", "name": "Patio door (2.1m × 2.1m)", "prices": ["", "", ""]}]}, {"id": "aludoors", "name": "Aluminium doors", "family": "alu", "fmt": "prefix", "prefix": "Aluminium", "perM2": false, "repPrice": true, "items": [{"id": "alu-french", "name": "French door", "prices": ["", "", ""]}, {"id": "alu-single", "name": "Single door", "prices": ["", "", ""]}, {"id": "alu-patio", "name": "Patio door (2.1m × 2.1m)", "prices": ["", "", ""]}]}, {"id": "alusliding", "name": "Aluminium sliding doors", "family": "alu", "fmt": "prefix", "prefix": "Aluminium", "suffix": " sliding door", "perM2": true, "repPrice": true, "items": [{"id": "slide-mono", "name": "Monorail", "prices": [400, 500, 550]}, {"id": "slide-duo", "name": "Duo rail", "prices": [550, 600, 650]}, {"id": "slide-triple", "name": "Triple track", "prices": [550, 600, 650]}]}, {"id": "thermos", "name": "Thermo doors", "family": "", "fmt": "comma", "perM2": false, "repPrice": true, "items": [{"id": "th0", "name": "Achilles", "prices": ["", "", ""]}, {"id": "th1", "name": "Eris", "prices": ["", "", ""]}, {"id": "th2", "name": "Apollo", "prices": ["", "", ""]}, {"id": "th3", "name": "Castor", "prices": ["", "", ""]}, {"id": "th4", "name": "Atlanta", "prices": ["", "", ""]}, {"id": "th5", "name": "Dione", "prices": ["", "", ""]}, {"id": "th6", "name": "Clio", "prices": ["", "", ""]}, {"id": "th7", "name": "Echo", "prices": ["", "", ""]}, {"id": "th8", "name": "Solis", "prices": ["", "", ""]}, {"id": "th9", "name": "Aurora", "prices": ["", "", ""]}, {"id": "th10", "name": "Everest", "prices": ["", "", ""]}], "addons": [{"id": "ad-side", "name": "Sidelights (1.8m wide)", "price": ""}, {"id": "ad-arch", "name": "Arch", "price": ""}]}, {"id": "hardwood", "name": "Hardwood doors", "family": "", "fmt": "comma", "perM2": false, "repPrice": true, "items": [{"id": "hw0", "name": "Tobias", "prices": ["", "", ""]}, {"id": "hw1", "name": "Samson", "prices": ["", "", ""]}, {"id": "hw2", "name": "Cosmos", "prices": ["", "", ""]}, {"id": "hw3", "name": "Lennox", "prices": ["", "", ""]}, {"id": "hw4", "name": "Konrad", "prices": ["", "", ""]}, {"id": "hw5", "name": "Mason", "prices": ["", "", ""]}, {"id": "hw6", "name": "Archer", "prices": ["", "", ""]}, {"id": "hw7", "name": "Dillon", "prices": ["", "", ""]}, {"id": "hw8", "name": "Franklin", "prices": ["", "", ""]}, {"id": "hw9", "name": "Hunter", "prices": ["", "", ""]}, {"id": "hw10", "name": "Montrose", "prices": ["", "", ""]}, {"id": "hw11", "name": "Celest - No Arch", "prices": ["", "", ""]}, {"id": "hw12", "name": "Hudson", "prices": ["", "", ""]}, {"id": "hw13", "name": "Avolan", "prices": ["", "", ""]}, {"id": "hw14", "name": "Sterling", "prices": ["", "", ""]}, {"id": "hw15", "name": "Jasper", "prices": ["", "", ""]}, {"id": "hw16", "name": "Jasmine in Std Frame", "prices": ["", "", ""]}, {"id": "hw17", "name": "Simone Over 2100mm", "prices": ["", "", ""]}, {"id": "hw18", "name": "Simone Up To 2100mm", "prices": ["", "", ""]}, {"id": "hw19", "name": "Albert Up To 2100mm", "prices": ["", "", ""]}, {"id": "hw20", "name": "Albert Over 2100mm", "prices": ["", "", ""]}, {"id": "hw21", "name": "Leto Up To 2100mm", "prices": ["", "", ""]}, {"id": "hw22", "name": "Leto Over 2100mm", "prices": ["", "", ""]}], "addons": []}];
+let pricing = store.get('sdw-demo-pricing-v6', null) || JSON.parse(JSON.stringify(DEFAULT_PRICING));
 let q = null;
 // ---------- helpers ----------
 const $ = id => document.getElementById(id);
@@ -1969,7 +1976,7 @@ $('form').addEventListener('input', e => {
       }
       const prev = g[ds.f], wasTT = isTT(g);
       g[ds.f] = el.value;
-      if (ds.f === 'ttPrice' && num(el.value) > 0) { pricing.ttLast = el.value; store.set('sdw-demo-pricing-v5', pricing); }
+      if (ds.f === 'ttPrice' && num(el.value) > 0) { pricing.ttLast = el.value; store.set('sdw-demo-pricing-v6', pricing); }
       if (ds.f === 'label' && wasTT !== isTT(g)) {
         if (isTT(g) && (g.ttPrice === undefined || g.ttPrice === '') && pricing.ttLast) g.ttPrice = pricing.ttLast;
         renderGroups();
@@ -2039,9 +2046,9 @@ $('form').addEventListener('input', e => {
     if (ds.rerender) renderItems();
   } else if (ds.price) {
     const [fi, ri] = ds.price.split('.').map(Number);
-    editList().families[fi].ranges[ri].rate = num(el.value); if (!priceBook) store.set('sdw-demo-pricing-v5', pricing); else priceDirty = true;
+    editList().families[fi].ranges[ri].rate = num(el.value); if (!priceBook) store.set('sdw-demo-pricing-v6', pricing); else priceDirty = true;
   } else if (el.id === 'triplePct') {
-    editList().triplePct = num(el.value); $('triplePctOut').textContent = rates().triplePct; if (!priceBook) store.set('sdw-demo-pricing-v5', pricing); else priceDirty = true;
+    editList().triplePct = num(el.value); $('triplePctOut').textContent = rates().triplePct; if (!priceBook) store.set('sdw-demo-pricing-v6', pricing); else priceDirty = true;
   }
   refresh();
 });
@@ -2735,8 +2742,12 @@ function renderList() {
       const lastSend = sends[sends.length - 1], lastRep = reps[reps.length - 1];
       const addr1 = (d.clientAddress || '').split('\n').map(x => x.trim()).filter(Boolean).join(', ');
       const fs = fuState(f);
+      const fuBtn = t => viewRep ? '' : `<button type="button" class="fu-go" data-fugo="${root.id}">▶ ${t}</button>`;
       const fuCell = fs.state === 'scheduled'
-        ? `<span class="clock"></span><b>${fmtDay(fs.next)}</b><div class="sub2">${FU_LABEL[fs.freq]} · ${fs.sent} of ${fs.max} sent</div>`
+        ? `<span class="fu-pill on">● Next email ${fmtDay(fs.next)} · 9am</span><div class="sub2">${FU_LABEL[fs.freq]} · ${fs.sent} of ${fs.max} sent</div>`
+        : fs.state === 'paused' ? `<span class="fu-pill paused"><b style="letter-spacing:-1px;color:inherit">❚❚</b> Paused · they replied</span>${fuBtn('Resume follow-ups')}`
+        : fs.state === 'off' ? `<span class="fu-pill grey">Off</span>${fuBtn('Turn on follow-ups')}`
+        : fs.state === 'done' ? `<span class="fu-pill grey">All ${fuOf(root).max} sent</span>${fuBtn('Send more follow-ups')}`
         : `<span class="off">${esc(fs.label)}</span>`;
       const repOn = lastRep && lastRep.rec !== latest ? ` · on ${esc(displayRef(lastRep.rec.data))}` : '';
       return `<tr class="${un ? 'newreply' : ''}" data-open="${latest.id}" data-root="${root.id}" title="Open the customer window">
@@ -2957,6 +2968,8 @@ $('listView').addEventListener('click', e => {
     }
     return;
   }
+  const fg = e.target.closest('[data-fugo]');
+  if (fg) { e.stopPropagation(); openProfile(fg.dataset.fugo); [80, 500].forEach(ms => setTimeout(() => { const bx = document.querySelector('.fubox'); if (bx) { bx.scrollIntoView({ block:'center' }); bx.classList.add('flash'); } }, ms)); return; }
   const pb = e.target.closest('[data-profile]');
   if (pb) { e.stopPropagation(); openProfile(pb.dataset.profile); return; }
   if (e.target.closest('#helloName')) { openMe(); setTimeout(() => $('meNameIn').focus(), 30); return; }
@@ -3203,7 +3216,7 @@ async function signOut() {
   const acc = account;
   account = null; clearInterval(pollTimer);
   // signing out also wipes this person's quote copy from this computer (it's all in SharePoint)
-  if (cloud.me) { try { localStorage.removeItem('sdw-qm-quotes:' + cloud.me); localStorage.removeItem('sdw-qm-cloudmeta:' + cloud.me); localStorage.removeItem('sdw-demo-pricing-v5'); } catch (e) {} }
+  if (cloud.me) { try { localStorage.removeItem('sdw-qm-quotes:' + cloud.me); localStorage.removeItem('sdw-qm-cloudmeta:' + cloud.me); localStorage.removeItem('sdw-demo-pricing-v6'); } catch (e) {} }
   delete settings.lastUser; saveSettings();
   if (useRedirect()) { try { await msalApp.logoutRedirect({ account:acc, postLogoutRedirectUri:redirectUri() }); } catch (e) { console.error(e); } return; }
   try { await msalApp.logoutPopup({ account:acc, mainWindowRedirectUri:redirectUri() }); } catch (e) { console.error(e); }
@@ -3521,7 +3534,7 @@ async function loadCloudPricing() {
       for (const k of Object.keys(REGIONS)) { const j = unwrap(await readPath(REGIONS[k].folder + '/rates.json')); if (listOK(j)) { got = j; break; } }
       if (got) { useList(got); cloud.priceState = 'ok'; } else cloud.priceState = 'missing';
     }
-    store.set('sdw-demo-pricing-v5', pricing);
+    store.set('sdw-demo-pricing-v6', pricing);
   } catch (e) { console.warn('price list', e); cloud.priceState = 'error'; }
   if (q) fullRender();
   priceUI();
@@ -3599,7 +3612,7 @@ async function setRepRegion(email, region) {
   }
   priceBook.regions[email] = region;
   await saveRegionMap();
-  if (email === cloud.me) { myRegion = region; useList(priceBook.lists[region]); store.set('sdw-demo-pricing-v5', pricing); if (q) fullRender(); }
+  if (email === cloud.me) { myRegion = region; useList(priceBook.lists[region]); store.set('sdw-demo-pricing-v6', pricing); if (q) fullRender(); }
 }
 function noAccess() {
   cloud.state = 'noaccess'; renderSync();
@@ -5518,7 +5531,7 @@ $('importFile').onchange = async e => {
       list.forEach(d => { if (!exists(d)) { recs.push(normalizeRec({ id:newId(), created:Date.now(), updated:Date.now(), data:d })); added++; } });
       if (data.pricing) pricing = data.pricing;
     } else throw new Error('bad');
-    store.set('sdw-demo-pricing-v5', pricing); saveSettings(); saveRecs();
+    store.set('sdw-demo-pricing-v6', pricing); saveSettings(); saveRecs();
     toast(`Imported ${added} quote${added === 1 ? '' : 's'}`);
     route(); initMsal();
   } catch (err) { toast('That file is not a quote backup.'); }
