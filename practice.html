@@ -1155,7 +1155,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 20 Nov 2026 · composite add-ons</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 20 Nov 2026 · add-ons fix</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -3545,6 +3545,15 @@ function buildExtras() {
       pr[k] = li && Array.isArray(li.prices) ? li.prices.slice(0, 3) : (x.seed ? x.seed.slice() : ['', '', '']);
     });
     x.prices = pr; delete x.seed;
+  }));
+  // add-ons are saved per region as one price each; put both regions' prices back together
+  struct.forEach(c => (c.addons || []).forEach(a => {
+    const pr = {};
+    keys.forEach(k => {
+      const lc = (priceBook.lists[k].extras || []).find(y => y.id === c.id), la = lc && (lc.addons || []).find(y => y.id === a.id);
+      pr[k] = la ? (la.price ?? '') : (a.prices ? (a.prices[k] ?? '') : '');
+    });
+    a.prices = pr; delete a.price;
   }));
   if (!base) priceDirty = true;
   priceBook.extras = struct;
