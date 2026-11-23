@@ -279,6 +279,8 @@ table.calc td.c { text-align:center; }
 .cust { font:inherit; font-weight:700; color:var(--navy); background:none; border:none; padding:0; cursor:pointer; text-align:left; text-decoration:underline; text-decoration-color:#c5c9da; text-underline-offset:3px; }
 .cust:hover { text-decoration-color:var(--navy); }
 .revtag { display:inline-block; font-size:10.5px; font-weight:800; color:var(--navy); background:#e6e9f5; border-radius:4px; padding:1px 5px; margin-left:4px; vertical-align:1px; }
+.sashrow { display:grid; grid-template-columns:minmax(0,1fr) 80px 34px; gap:8px 10px; align-items:end; }
+.sashex { grid-column:1 / -1; display:flex; gap:14px; flex-wrap:wrap; } .sashex .tick { display:flex; gap:6px; align-items:center; font-size:13px; font-weight:600; white-space:nowrap; }
 .fu-pill { display:inline-block; padding:4px 10px; border-radius:999px; font-weight:700; font-size:12px; white-space:nowrap; }
 .fu-pill.on { background:#dcf3e3; color:#146c35; border:1px solid #9fd9b2; }
 .fu-pill.paused { background:#fff3c4; color:#7a5800; border:1px solid #f0d36b; }
@@ -1162,7 +1164,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 20 Nov 2026 · follow-up colours</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 23 Nov 2026 · hardwood sash & Hercules</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -1211,7 +1213,7 @@ const DEFAULT_PRICING = {
     { id:'upvc', name:'uPVC', label:'uPVC casement windows', ranges:[{name:'Future Proof',rate:0},{name:'Greenline',rate:0},{name:'Odyssey',rate:0}] },
     { id:'alu', name:'Aluminium', label:'Aluminium windows', ranges:[{name:'Alu-P',rate:0},{name:'Vision',rate:0},{name:'Enhanced',rate:0},{name:'Affinity',rate:0}] },
     { id:'aluclad', name:'Alu-Clad', label:'Alu-clad windows', ranges:[{name:'Imported',rate:0},{name:'Irish Made',rate:0}] },
-    { id:'hardwood', name:'Hardwood', label:'Hardwood casement windows', ranges:[{name:'Heritage',rate:0},{name:'Herculese',rate:0}] }
+    { id:'hardwood', name:'Hardwood', label:'Hardwood casement windows', ranges:[{name:'Heritage',rate:0},{name:'Hercules',rate:0}] }
   ]
 };
 
@@ -1247,8 +1249,10 @@ function blankQuote(prev) {
 }
 
 // ---------- storage ----------
+// The Hercules range was first spelt “Herculese”: old prices and quotes are corrected as they are read.
+const fixNames = t => String(t).replace(/"Herculese"/g, '"Hercules"');
 const store = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e) { return d; } },
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(fixNames(v)) : d; } catch(e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e) { return false; } }
 };
 // practice.html is built from this same file with PRACTICE = true: it behaves exactly like a rep's screen, but with example prices and no sign-in or sending.
@@ -1277,11 +1281,30 @@ function newGroup(fid) {
   return { family:f.id, glazing:'double', label:f.label, where:'Throughout', areaMode:'manual', manualArea:0, openings:[{label:'',w:'',h:'',qty:1}] };
 }
 function groupArea(g) {
-  if (g.areaMode === 'fixed') return 0;
+  if (g.areaMode === 'fixed' || g.areaMode === 'sash') return 0;
   if (g.areaMode === 'openings') return (g.openings || []).reduce((s, o) => s + num(o.w) * num(o.h) * (num(o.qty) || 0), 0);
   return num(g.manualArea);
 }
 function area() { return q.groups.reduce((s, g) => s + groupArea(g), 0); }
+// uPVC sash windows priced per window from the office's price sheet (Rates > Extra items > uPVC sash windows).
+// Rows whose name starts with a size ("900 × 1200 …") are windows; the other rows (6/6 Grid, Arched Head) are tick boxes on each window.
+const SASH_RX = /^\d+\s*[×x]/;
+const sashCat = (fam = 'upvc') => extrasList().find(c => /sash/i.test(c.name || '') && c.family === fam);
+const sashCats = () => extrasList().filter(c => /sash/i.test(c.name || '') && c.family);
+const sashSizes = c => ((c && c.items) || []).filter(x => SASH_RX.test(String(x.name || '').trim()));
+const sashExtras = c => ((c && c.items) || []).filter(x => String(x.name || '').trim() && !SASH_RX.test(String(x.name).trim()));
+function sashEach(w, t, fam) {
+  const c = sashCat(fam); if (!c) return 0;
+  const x = (c.items || []).find(y => y.id === w.size); if (!x) return 0;
+  return num(priceArr(x)[t]) + sashExtras(c).filter(e => (w.ex || []).includes(e.id)).reduce((s, e) => s + num(priceArr(e)[t]), 0);
+}
+function sashCost(g, range, fam) {
+  if (g.areaMode !== 'sash' || (fam && fam !== g.family)) return 0;
+  const t = rangeTier(g.family, range);
+  return (g.sash || []).reduce((s, w) => s + sashEach(w, t, g.family) * (num(w.qty) || 0), 0);
+}
+const sashMissing = (g, t) => { const c = sashCat(g.family); return (g.sash || []).some(w => { const x = c && (c.items || []).find(y => y.id === w.size); return x && !(num(priceArr(x)[t]) > 0); }); };
+const sashCount = g => (g.sash || []).reduce((t, x) => t + (x.size ? num(x.qty) || 0 : 0), 0);
 const uplift = g => g.glazing === 'triple' ? 1 + num(rates().triplePct) / 100 : 1;
 function rangeRate(fid, name) { const f = famById(fid); const r = f.ranges.find(x => x.name === name) || f.ranges[0]; return r ? r.rate : 0; }
 // In "different products" mode a fixed-price item can have its own price for each product (it.pp[family]).
@@ -1395,7 +1418,7 @@ function boxRows() {
       for (let i = 0; i < pr.count; i++) {
         const key = `p${ri}:${i}`, range = pr.sel[i];
         const ctx = { key, ranges:[{ family:pr.family, range }] }, extra = itemsTotal(pr.family, ctx);
-        const windows = q.groups.reduce((s, g) => s + groupArea(g) * rangeRate(pr.family, range) * uplift(g), 0);
+        const windows = q.groups.reduce((s, g) => s + (groupArea(g) * rangeRate(pr.family, range) + sashCost(g, range, pr.family)) * uplift(g), 0);
         const calc = roundTo(windows + extra);
         const ov = q.boxOverrides[key];
         const final = ov !== undefined && ov !== '' ? num(ov) : calc;
@@ -1411,10 +1434,10 @@ function boxRows() {
     const ctx = { key:String(i), ranges:q.groups.map((g, gi) => ({ family:g.family, range:b.sel ? b.sel[gi] : b.range })) }, extra = itemsTotal(undefined, ctx);
     let windows = 0, parts = [], fams = [];
     if (q.boxMode === 'products') {
-      windows = q.groups.reduce((s, g) => s + groupArea(g) * rangeRate(b.family, b.range) * uplift(g), 0);
+      windows = q.groups.reduce((s, g) => s + (groupArea(g) * rangeRate(b.family, b.range) + sashCost(g, b.range, b.family)) * uplift(g), 0);
       parts = [b.range]; fams = [famById(b.family).name];
     } else {
-      q.groups.forEach((g, gi) => { windows += groupArea(g) * rangeRate(g.family, b.sel[gi]) * uplift(g); parts.push(b.sel[gi]); fams.push(famById(g.family).name); });
+      q.groups.forEach((g, gi) => { windows += (groupArea(g) * rangeRate(g.family, b.sel[gi]) + sashCost(g, b.sel[gi])) * uplift(g); parts.push(b.sel[gi]); fams.push(famById(g.family).name); });
     }
     const uParts = parts.filter((x, k) => parts.indexOf(x) !== k ? false : true);
     const uFams = [...new Set(fams)];
@@ -1499,8 +1522,8 @@ function renderGroups() {
         ${pickField(gi, 'Where', 'where', WHERE_OPTS, g.where, g.whereCustom, 'e.g. Front and side of house')}
       </div>
       <div class="row">
-        <label class="f">Work out area from<select data-g="${gi}" data-f="areaMode">${sel(['openings','fixed'].includes(g.areaMode) ? g.areaMode : 'manual', [['manual','Total area I type in'],['openings','List of openings (W × H)'],['fixed','Fixed price']])}</select></label>
-        ${g.areaMode === 'fixed' ? `<label class="f">Fixed price (€, excl. VAT)<input type="number" step="1" min="0" data-g="${gi}" data-f="fixedPrice" value="${esc(g.fixedPrice ?? '')}" placeholder="e.g. 4500"></label>` : g.areaMode === 'openings' ? '' : `<label class="f">Total area (m²)<input type="number" step="0.01" min="0" data-g="${gi}" data-f="manualArea" value="${esc(g.manualArea)}"></label>`}
+        <label class="f">Work out area from<select data-g="${gi}" data-f="areaMode">${sel(['openings','fixed','sash'].includes(g.areaMode) ? g.areaMode : 'manual', [['manual','Total area I type in'],['openings','List of openings (W × H)'],['fixed','Fixed price']].concat((sashCat(g.family) || g.areaMode === 'sash') ? [['sash','Sash price list (each window)']] : []))}</select></label>
+        ${g.areaMode === 'fixed' ? `<label class="f">Fixed price (€, excl. VAT)<input type="number" step="1" min="0" data-g="${gi}" data-f="fixedPrice" value="${esc(g.fixedPrice ?? '')}" placeholder="e.g. 4500"></label>` : g.areaMode === 'openings' || g.areaMode === 'sash' ? '' : `<label class="f">Total area (m²)<input type="number" step="0.01" min="0" data-g="${gi}" data-f="manualArea" value="${esc(g.manualArea)}"></label>`}
       </div>
       ${g.areaMode === 'openings' ? `<div class="list">${g.openings.map((o, oi) => `
         <div class="li open">
@@ -1511,7 +1534,8 @@ function renderGroups() {
           <button class="btn x" type="button" data-g="${gi}" data-delo="${oi}" aria-label="Remove opening">✕</button>
         </div>`).join('')}</div>
         <button class="btn sm" type="button" data-addo="${gi}" style="justify-self:start">+ Add opening</button>` : ''}
-      <div class="row">
+      ${g.areaMode === 'sash' ? sashRowsHTML(g, gi) : ''}
+      <div class="row" ${g.areaMode === 'sash' ? 'hidden' : ''}>
         <label class="f">Number of windows<input type="number" step="1" min="0" data-g="${gi}" data-f="winQty" value="${esc(g.winQty ?? '')}" placeholder="${g.areaMode === 'openings' ? 'Counted from openings' : 'e.g. 8'}"></label>
       </div>
       ${isTT(g) ? `<div class="row">
@@ -1521,10 +1545,22 @@ function renderGroups() {
       <div class="calc" data-garea="${gi}"></div>
     </div>`).join('');
 }
+function sashRowsHTML(g, gi) {
+  const c = sashCat(g.family); if (!(g.sash || []).length) g.sash = [{ size:'', qty:1, ex:[] }];
+  if (!c) return '<p class="hint">The office hasn’t set up the sash price list yet.</p>';
+  return `<div class="list sashlist">${g.sash.map((w, wi) => `
+    <div class="li sashrow">
+      <label class="f">Window size (W × H mm)<select data-g="${gi}" data-sw="${wi}" data-f="size"><option value="">Choose a size…</option>${sashSizes(c).map(x => `<option value="${esc(x.id)}" ${x.id === w.size ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+      <label class="f">Qty<input type="number" min="0" step="1" data-g="${gi}" data-sw="${wi}" data-f="qty" value="${esc(w.qty)}"></label>
+      <button class="btn x" type="button" data-g="${gi}" data-dels="${wi}" aria-label="Remove window">✕</button>
+      <div class="sashex">${sashExtras(c).map(e => `<label class="tick"><input type="checkbox" data-g="${gi}" data-sw="${wi}" data-f="ex" data-eid="${esc(e.id)}" ${(w.ex || []).includes(e.id) ? 'checked' : ''}> ${esc(e.name)}</label>`).join('')}</div>
+    </div>`).join('')}</div>
+    <button class="btn sm" type="button" data-adds="${gi}" style="justify-self:start">+ Add sash window</button>`;
+}
 const ITEM_OPTS = ['Lift and slide door', 'French door', 'Patio door', 'Single door', 'Composite front door', 'Lift and slide door (Alu-clad in Future Proof / Alu-P)'];
 // ---- Extra items set up by the office (Rates > Extra items) ----
 // Each category has up to three price columns ("tiers"). A price box uses the column that matches its range:
-// tier 1 Future Proof / Alu-P / Imported / Heritage, tier 2 Greenline / Vision / Irish Made / Herculese, tier 3 Odyssey / Enhanced / Affinity.
+// tier 1 Future Proof / Alu-P / Imported / Heritage, tier 2 Greenline / Vision / Irish Made / Hercules, tier 3 Odyssey / Enhanced / Affinity.
 // A uPVC-doors item in a box that has a uPVC range uses that range's column (same for aluminium); otherwise the first range in the box decides.
 const DEFAULT_EXTRAS = [
   { id:'composite', name:'Composite door', family:'', fmt:'comma', perM2:false, repPrice:true, items:[
@@ -1547,7 +1583,7 @@ const isPriced = x => [0, 1, 2].every(t => num(priceArr(x)[t]) > 0);
 const availItems = c => (c.items || []).filter(x => PRACTICE || !isRepUser() || isPriced(x));
 function tierCols(c) {
   if (c.family) { const f = rates().families.find(x => x.id === c.family) || famById(c.family); const r = f.ranges.map(x => x.name); return [r[0] || 'Tier 1', r[1] || 'Tier 2', r.slice(2).join(' / ') || 'Tier 3'].map(n => [n, '']); }
-  return [['Tier 1', 'Future Proof · Alu-P · Imported · Heritage'], ['Tier 2', 'Greenline · Vision · Irish Made · Herculese'], ['Tier 3', 'Odyssey · Enhanced · Affinity']];
+  return [['Tier 1', 'Future Proof · Alu-P · Imported · Heritage'], ['Tier 2', 'Greenline · Vision · Irish Made · Hercules'], ['Tier 3', 'Odyssey · Enhanced · Affinity']];
 }
 function rangeTier(fid, name) { const f = rates().families.find(x => x.id === fid); const i = f ? f.ranges.findIndex(r => r.name === name) : 0; return Math.max(0, Math.min(2, i)); }
 function tierFor(c, ctx) {
@@ -1634,7 +1670,7 @@ function renderItems() {
 }
 const MIC = '<button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button>';
 function catItemHTML(it, i) {
-  const cats = extrasList().filter(c => availItems(c).length || c.repPrice);
+  const cats = extrasList().filter(c => !sashCats().includes(c) && (availItems(c).length || c.repPrice));
   const c = catOf(it), x = itemOf(it);
   const own = it.cat === 'custom' || it.itemId === '__rep';
   const boxes = own ? boxRows() : [];
@@ -1793,7 +1829,11 @@ function updateNumbers() {
   if ($('showTriple')) { const allT = q.groups.every(g => g.glazing === 'triple'); $('showTriple').disabled = allT; if (allT) $('showTriple').checked = false; }
   if ($('ctOut')) $('ctOut').textContent = num(q.ctTax) > 0 ? `Adds ${eur(num(q.ctTax), 2)} to every price box. It isn't mentioned anywhere on the quote.` : 'Added to every price box. It isn\'t mentioned anywhere on the quote.';
   $('areaOut').textContent = area().toFixed(2) + ' m²';
-  q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el) el.textContent = g.areaMode === 'fixed' ? (g.glazing === 'triple' ? `Fixed price ${eur(Math.max(0, num(g.fixedPrice)))} + triple glazing ${pricing.triplePct}% = ${eur(groupFixed(g))} added to every box` : `Fixed price ${eur(groupFixed(g))} added to every box`) + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
+  q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el && g.areaMode === 'sash') {
+      const n = sashCount(g), rs = famById(g.family).ranges.slice(0, 3);
+      el.innerHTML = `${n} sash window${n === 1 ? '' : 's'} · ` + rs.map((r, t) => sashMissing(g, t) ? `<span style="color:var(--muted)">${esc(r.name)}: not on the price sheet</span>` : `${esc(r.name)} <b>${eur(sashCost(g, r.name) * uplift(g))}</b>`).join(' · ');
+      return; }
+    if (el) el.textContent = g.areaMode === 'fixed' ? (g.glazing === 'triple' ? `Fixed price ${eur(Math.max(0, num(g.fixedPrice)))} + triple glazing ${pricing.triplePct}% = ${eur(groupFixed(g))} added to every box` : `Fixed price ${eur(groupFixed(g))} added to every box`) + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
   q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.textContent = replLine(r) + ' · adds ' + eur(replCost(r), 2) + ' to every box'; });
   q.items.forEach((it, i) => { const el = document.querySelector(`[data-itemcalc="${i}"]`); if (!el) return; const fams = itemFams();
     if (it.cat !== undefined) { el.innerHTML = catItemCalc(it); return; }
@@ -1950,7 +1990,7 @@ function checkOverflow() {
     const inner = page.querySelector('.inner'), foot = page.querySelector('footer');
     if (inner.getBoundingClientRect().bottom > foot.getBoundingClientRect().top + 1) msgs.push(`Page ${i + 1} is too full and will be cut off. Shorten the intro, scope items or upgrades.`);
   });
-  if (!area() && !itemsTotal()) msgs.push('No window area or items entered yet, so the boxes show €0.');
+  if (!area() && !itemsTotal() && !q.groups.some(g => sashCount(g))) msgs.push('No window area or items entered yet, so the boxes show €0.');
   $('warn').hidden = !msgs.length; $('warn').innerHTML = msgs.map(esc).join('<br>');
 }
 
@@ -1962,6 +2002,11 @@ $('form').addEventListener('input', e => {
   } else if (ds.g !== undefined && ds.f) {
     const gi = +ds.g, g = q.groups[gi];
     if (ds.o !== undefined) g.openings[+ds.o][ds.f] = el.value;
+    else if (ds.sw !== undefined) {
+      const w = g.sash[+ds.sw];
+      if (ds.f === 'ex') { const s0 = new Set(w.ex || []); el.checked ? s0.add(ds.eid) : s0.delete(ds.eid); w.ex = [...s0]; } else w[ds.f] = el.value;
+      g.winQty = String(sashCount(g));
+    }
     else {
       if (ds.f === 'labelSel' || ds.f === 'whereSel') {
         const key = ds.f === 'labelSel' ? 'label' : 'where', flag = key + 'Custom';
@@ -1984,10 +2029,11 @@ $('form').addEventListener('input', e => {
         if (box) { box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
       }
       if (ds.f === 'family') {
+        if (g.areaMode === 'sash') { if (sashCat(g.family)) g.sash = []; else { g.areaMode = 'manual'; g.winQty = ''; } }
         if (!g.label || g.label === famById(prev).label) g.label = famById(g.family).label;
         q.boxes.forEach((b, i) => { if (b && b.sel) b.sel[gi] = defaultSel(q, i, gi); });
         renderGroups(); renderBoxes();
-      } else if (ds.f === 'areaMode') renderGroups();
+      } else if (ds.f === 'areaMode') { if (g.areaMode === 'sash') g.winQty = String(sashCount(g)); else if (prev === 'sash') g.winQty = ''; renderGroups(); }
       else if (ds.f === 'where') renderBoxes();
     }
   } else if (ds.box !== undefined) {
@@ -2066,6 +2112,8 @@ $('form').addEventListener('click', e => {
     const g = q.groups[+ds.g]; g.openings.splice(+ds.delo, 1);
     if (!g.openings.length) g.openings.push({label:'', w:'', h:'', qty:1});
     renderGroups();
+  } else if (ds.dels !== undefined) { const g = q.groups[+ds.g]; g.sash.splice(+ds.dels, 1); g.winQty = String(sashCount(g)); renderGroups();
+  } else if (ds.adds !== undefined) { q.groups[+ds.adds].sash.push({ size:'', qty:1, ex:[] }); renderGroups();
   } else if (ds.addo !== undefined) { q.groups[+ds.addo].openings.push({label:'', w:'', h:'', qty:1}); renderGroups(); }
   else if (ds.count !== undefined) { q.boxCount = +ds.count; ensureBoxes(); renderBoxes(); }
   else if (ds.pcount !== undefined) {
@@ -3313,11 +3361,11 @@ async function pool(items, n, fn) {
 }
 async function downloadJson(item) {
   const url = item['@microsoft.graph.downloadUrl'];
-  if (url) { const res = await fetch(url); if (!res.ok) throw new Error('Download failed ' + res.status); return res.json(); }
+  if (url) { const res = await fetch(url); if (!res.ok) throw new Error('Download failed ' + res.status); return JSON.parse(fixNames(await res.text())); }
   const token = await getToken(false, SCOPE_SETS.sites);
   const res = await fetch(`https://graph.microsoft.com/v1.0/drives/${cloud.driveId}/items/${item.id}/content`, { headers:{ Authorization:'Bearer ' + token } });
   if (!res.ok) throw new Error('Download failed ' + res.status);
-  return res.json();
+  return JSON.parse(fixNames(await res.text()));
 }
 // Read every quote file in a folder; only download files that changed since last time.
 async function readFolder(folderId, known) {
@@ -4936,13 +4984,13 @@ let exCat = null;
 function renderExtras() {
   const E = priceBook.extras, keys = Object.keys(REGIONS);
   if (!E.some(c => c.id === exCat)) exCat = E[0] ? E[0].id : null;
-  $('exChips').innerHTML = E.map(c => `<button type="button" data-excat="${esc(c.id)}" class="${c.id === exCat ? 'on' : ''}">${esc(c.name)}<small>${c.items.length}</small></button>`).join('') + '<button type="button" data-exnewcat style="border-style:dashed">+ New category</button>';
+  $('exChips').innerHTML = E.map(c => `<button type="button" data-excat="${esc(c.id)}" class="${c.id === exCat ? 'on' : ''}">${esc(c.name)}<small>${c.items.length}</small></button>`).join('') + '<button type="button" data-exnewcat style="border-style:dashed">+ New category</button>' + (E.some(c => /sash/i.test(c.name || '') && !/hardwood/i.test(c.name || '')) ? '' : '<button type="button" data-exnewsash="upvc" style="border-style:dashed;border-color:var(--gold)">+ uPVC sash price list</button>') + (E.some(c => /hardwood/i.test(c.name || '') && /sash/i.test(c.name || '')) ? '' : '<button type="button" data-exnewsash="hardwood" style="border-style:dashed;border-color:var(--gold)">+ Hardwood sash price list</button>');
   const c = E.find(x => x.id === exCat);
   if (!c) { $('exBody').innerHTML = '<p class="hint">No categories yet.</p>'; return; }
   const cols = tierCols(c);
   $('exBody').innerHTML = `<div class="exset">
       <label>Category name <input type="text" data-exset="name" value="${esc(c.name)}"></label>
-      <label>Columns <select data-exset="family"><option value="" ${!c.family ? 'selected' : ''}>Tiers (any product)</option><option value="upvc" ${c.family === 'upvc' ? 'selected' : ''}>uPVC ranges</option><option value="alu" ${c.family === 'alu' ? 'selected' : ''}>Aluminium ranges</option></select></label>
+      <label>Columns <select data-exset="family"><option value="" ${!c.family ? 'selected' : ''}>Tiers (any product)</option><option value="upvc" ${c.family === 'upvc' ? 'selected' : ''}>uPVC ranges</option><option value="alu" ${c.family === 'alu' ? 'selected' : ''}>Aluminium ranges</option><option value="hardwood" ${c.family === 'hardwood' ? 'selected' : ''}>Hardwood ranges</option></select></label>
       <label><input type="checkbox" data-exset="perM2" ${c.perM2 ? 'checked' : ''}> Priced per m² (rep enters width × height)</label>
       <label><input type="checkbox" data-exset="repPrice" ${c.repPrice ? 'checked' : ''}> Also offer “Rep price” (rep types their own)</label>
       <button class="btn sm" type="button" data-exdelcat style="color:var(--danger)">Delete category</button></div>
@@ -4950,7 +4998,7 @@ function renderExtras() {
     ${c.items.map((x, xi) => `<tr><td><input type="text" data-exname="${xi}" value="${esc(x.name)}" style="width:100%;min-width:180px;text-align:left" aria-label="Item name"></td>
       ${[0, 1, 2].map(t => `<td class="dr">${keys.map(k => `<span class="dl">${REGIONS[k].label[0]}</span><input type="number" step="1" min="0" data-exp="${k}.${xi}.${t}" value="${esc(((x.prices || {})[k] || [])[t] ?? '')}" aria-label="${esc(x.name)} ${esc(cols[t][0])} ${REGIONS[k].label}">`).join('')}</td>`).join('')}
       <td><button class="btn x" type="button" data-exdel="${xi}" aria-label="Remove ${esc(x.name)}">✕</button></td></tr>`).join('')}
-    <tr><td colspan="5"><button class="btn sm" type="button" data-exadd>+ Add item</button>${sheetFor(c) ? ` <button class="btn sm primary" type="button" data-exfill>${sheetFor(c).items.length ? `Fill in ${esc(sheetFor(c).label)} from the price sheet` : 'Add Sidelights (€400) and Arch (€1,500)'}</button>` : ''} <span class="hint" style="margin-left:8px">D = Dublin, R = Roscommon. An item only shows to reps once all its prices are filled in.</span></td></tr></tbody></table></div>
+    <tr><td colspan="5"><button class="btn sm" type="button" data-exadd>+ Add item</button>${sheetFor(c) ? ` <button class="btn sm primary" type="button" data-exfill>${sheetFor(c).items.length ? `Fill in ${esc(sheetFor(c).label)} from the price sheet` : 'Add Sidelights (€400) and Arch (€1,500)'}</button>` : ''} <span class="hint" style="margin-left:8px">${/sash/i.test(c.name) ? 'D = Dublin, R = Roscommon. Rows starting with a size (e.g. 900 × 1200) are the windows; the other rows (6/6 Grid, Arched Head) become tick boxes on each window. Make sure Columns is set to the right product (uPVC or Hardwood).' : 'D = Dublin, R = Roscommon. An item only shows to reps once all its prices are filled in.'}</span></td></tr></tbody></table></div>
     <div class="ad-box"><div><b>Add-ons (tick boxes for the rep)</b><span class="hint">Each one adds the same amount to every range. Reps see the tick box, not the price. Reps also always get a “Custom price” tick box.</span></div>
       ${(c.addons || []).length ? `<table class="ad-t"><thead><tr><th>Add-on</th>${keys.map(k => `<th>${REGIONS[k].label} €</th>`).join('')}<th></th></tr></thead><tbody>
       ${(c.addons || []).map((a, ai) => `<tr><td><input type="text" data-adname="${ai}" value="${esc(a.name)}" placeholder="e.g. Sidelights (1.8m wide)"></td>${keys.map(k => `<td><input type="number" step="1" min="0" class="n" data-adp="${k}.${ai}" value="${esc((a.prices || {})[k] ?? '')}"></td>`).join('')}<td><button class="btn x" type="button" data-addel="${ai}" aria-label="Remove add-on">✕</button></td></tr>`).join('')}</tbody></table>` : ''}
@@ -4959,17 +5007,20 @@ function renderExtras() {
 // Price sheets the office sent in (Nov 2026). The sheet price is the middle tier (Greenline);
 // hardwood is €600 less / €400 more either side, Thermo doors €400 either side. Same for Dublin and Roscommon.
 const SHEETS = {
-  hardwood:{ label:'hardwood doors', test:/hardwood/i, down:600, up:400, items:[['Tobias',7500],['Samson',7500],['Cosmos',7500],['Lennox',7500],['Konrad',7500],['Mason',7500],['Archer',7500],['Dillon',7000],['Franklin',6500],['Hunter',6500],['Montrose',5500],['Celest - No Arch',5500],['Hudson',4300],['Avolan',4500],['Sterling',3200],['Jasper',2800],['Jasmine in Std Frame',2500],['Simone Over 2100mm',5300],['Simone Up To 2100mm',4500],['Albert Up To 2100mm',3500],['Albert Over 2100mm',4000],['Leto Up To 2100mm',3500],['Leto Over 2100mm',4000]] },
+  hardwood:{ label:'hardwood doors', test:/^(?!.*sash).*hardwood/i, down:600, up:400, items:[['Tobias',7500],['Samson',7500],['Cosmos',7500],['Lennox',7500],['Konrad',7500],['Mason',7500],['Archer',7500],['Dillon',7000],['Franklin',6500],['Hunter',6500],['Montrose',5500],['Celest - No Arch',5500],['Hudson',4300],['Avolan',4500],['Sterling',3200],['Jasper',2800],['Jasmine in Std Frame',2500],['Simone Over 2100mm',5300],['Simone Up To 2100mm',4500],['Albert Up To 2100mm',3500],['Albert Over 2100mm',4000],['Leto Up To 2100mm',3500],['Leto Over 2100mm',4000]] },
   thermo:{ label:'Thermo doors', test:/thermo/i, down:400, up:400, items:['Achilles','Eris','Apollo','Castor','Atlanta','Dione','Clio','Echo','Solis','Aurora','Everest'].map(n => [n, 3200]),
     addons:[['Sidelights (1.8m wide)', 400], ['Arch', 1500]] },
+  hwsash:{ label:'hardwood sash windows', test:/hardwood.*sash|sash.*hardwood/i, fam:'hardwood', down:0, up:0, items:[['800 × 1200 · Single sash',1350],['1000 × 1500 · Single sash',1500],['1000 × 2000 · Single sash',1700],['2/2 Grid',150],['6/6 Grid',300],['Arched Head',500]].map(([n, h]) => [n, [h, Math.round(h * 1.2), '']]).concat([['No make good',[350, 350, '']],['Full replacement',[550, 550, '']]]) },
+  sash:{ label:'uPVC sash windows', test:/sash/i, fam:'upvc', down:0, up:0, items:[['900 × 1200 · Single sash',1050,1200],['900 × 1500 · Single sash',1100,1250],['900 × 1800 · Single sash',1250,1400],['1000 × 2100 · Single sash',1350,1500],['1000 × 2300 · Single sash',1450,1600],['1800 × 1200 · Double sash',1750,1900],['1800 × 1500 · Double sash',1900,2100],['1800 × 1800 · Double sash',2100,2300],['2000 × 1200 · Tri part sash',1950,2400],['2000 × 1500 · Tri part sash',2200,2650],['2000 × 1800 · Tri part sash',2350,2800],['6/6 Grid',150,170],['Arched Head',300,350]].map(([n, gl, od]) => [n, [Math.round(gl * 0.8), gl, od]]) },
   composite:{ label:'composite door add-ons', test:/composite/i, down:0, up:0, items:[], addons:[['Sidelights (1.8m wide)', 400], ['Arch', 1500]] }
 };
 const sheetFor = c => Object.values(SHEETS).find(sh => sh.test.test(c.name || ''));
 function fillFromSheet(c) {
   const sh = sheetFor(c); if (!sh) return;
+  if (sh.fam) { c.family = sh.fam; c.repPrice = false; c.perM2 = false; }
   const keys = Object.keys(REGIONS), uid = () => 'it' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   sh.items.forEach(([name, mid]) => {
-    const tiers = [mid - sh.down, mid, mid + sh.up];
+    const tiers = Array.isArray(mid) ? mid.slice() : [mid - sh.down, mid, mid + sh.up];
     let x = c.items.find(y => String(y.name).trim().toLowerCase() === name.toLowerCase());
     if (!x) { x = { id:uid(), name, prices:{} }; c.items.push(x); }
     x.prices = Object.fromEntries(keys.map(k => [k, tiers.slice()]));
@@ -4992,6 +5043,7 @@ $('ratesEx').addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   const E = priceBook.extras, c = E.find(x => x.id === exCat);
   if (t.dataset.excat) { exCat = t.dataset.excat; return renderExtras(); }
+  if (t.hasAttribute('data-exnewsash')) { const hw = t.dataset.exnewsash === 'hardwood', id = 'sash' + Date.now().toString(36), nc = { id, name:hw ? 'Hardwood sash windows' : 'uPVC sash windows (foiled)', family:hw ? 'hardwood' : 'upvc', fmt:'comma', perM2:false, repPrice:false, items:[], addons:[] }; E.push(nc); fillFromSheet(nc); exCat = id; renderExtras(); ratesState(); toast('Sash price list added. Check it, then click Save rates.'); return; }
   if (t.hasAttribute('data-exnewcat')) { const id = 'cat' + Date.now().toString(36); E.push({ id, name:'New category', family:'', fmt:'comma', perM2:false, repPrice:true, items:[] }); exCat = id; renderExtras(); ratesState(); const n = document.querySelector('[data-exset="name"]'); if (n) { n.focus(); n.select(); } return; }
   if (!c) return;
   if (t.hasAttribute('data-exadd')) { c.items.push({ id:'it' + Date.now().toString(36), name:'', prices:Object.fromEntries(Object.keys(REGIONS).map(k => [k, ['', '', '']])) }); renderExtras(); ratesState(); const ns = document.querySelectorAll('[data-exname]'); ns[ns.length - 1].focus(); return; }
