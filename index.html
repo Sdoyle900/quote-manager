@@ -1177,7 +1177,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 23 Nov 2026 · extra items & timber</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 23 Nov 2026 · no rates on quote form</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -1587,7 +1587,7 @@ const xOnce = d => d && d.by === 'once per quote';
 const xQty = (d, x) => xOnce(d) ? 1 : Math.max(0, num(x.qty));
 const xLine = (d, x) => String(d.line || d.name).replace(/\{qty\}/g, String(xOnce(d) ? 1 : (num(x.qty) || 0)));
 const xCost = () => ((q && q.xtras) || []).reduce((s, x) => { const d = xOf(x); return s + (d ? num(d.price) * xQty(d, x) : 0); }, 0);
-function xInfo(x) { const d = xOf(x); if (!d) return ''; return (x.scope ? `On the quote: “${esc(xLine(d, x))}”` : 'Included in the price, not listed on the quote') + (isRepUser() ? '' : ` · adds ${eur(num(d.price) * xQty(d, x))} to every box`); }
+function xInfo(x) { const d = xOf(x); if (!d) return ''; return (x.scope ? `On the quote: “${esc(xLine(d, x))}”` : 'Included in the price, not listed on the quote') ; }
 function renderX() {
   if (!q) return;
   q.xtras = q.xtras || [];
@@ -1755,7 +1755,7 @@ function catItemHTML(it, i) {
 function addonsHTML(it, i, c) {
   const ads = catAddons(c), rep = isRepUser();
   const tick = (f, extra, label, on) => `<label class="ad-tick"><input type="checkbox" data-list="items" data-i="${i}" data-f="${f}" ${extra} ${on ? 'checked' : ''}> ${label}</label>`;
-  return `<div class="ad-ticks">${ads.map(a => tick('addon', `data-aid="${esc(a.id)}"`, esc(a.name) + (rep ? '' : ` <small>+${eur(addonPrice(a))}</small>`), (it.addons || []).includes(a.id))).join('')}${tick('cust', '', 'Custom price', it.cust)}</div>
+  return `<div class="ad-ticks">${ads.map(a => tick('addon', `data-aid="${esc(a.id)}"`, esc(a.name), (it.addons || []).includes(a.id))).join('')}${tick('cust', '', 'Custom price', it.cust)}</div>
     ${it.cust ? `<div class="ad-cust"><div class="ad-ch">Custom price: extra added to each price box (€)</div>
       <label class="f">What it is for (shown on the quote)<input data-list="items" data-i="${i}" data-f="custDesc" value="${esc(it.custDesc || '')}" placeholder="e.g. Glazed side panel with leaded glass"></label>
       <div class="bpgrid">${boxRows().map(r => `<label class="f">${esc((q.boxMode === 'products' ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-list="items" data-i="${i}" data-f="cbp" data-bpbox="${esc(r.key)}" value="${esc((it.cbp || {})[r.key] ?? '')}"></label>`).join('')}</div></div>` : ''}`;
@@ -1767,10 +1767,9 @@ function catItemCalc(it) {
   if (it.cat === 'custom' || it.itemId === '__rep') return rows.map(r => `${esc(label(r))} +${eur(itemCost(it, r.family, r.ctx))}`).join(' · ');
   const c = catOf(it), x = itemOf(it); if (!x) return '';
   const m2 = c.perM2 ? num(it.w) * num(it.h) : 0;
-  if (isRepUser()) return c.perM2 ? (m2 ? `${m2.toFixed(2)} m² · priced by the office` : 'Enter the width and height') : '';
-  const reg = typeof priceBook !== 'undefined' && priceBook ? REGIONS[(viewRep ? priceBook.regions[viewRep.toLowerCase()] : myRegion) || 'dublin'].label + ' rates' : 'office price';
-  if (!isPriced(x)) return '<span style="color:var(--danger)">No price set for this item yet (Rates › Extra items). Reps can’t pick it.</span>';
-  return `<span class="offn">Office price (${esc(reg)}): ${rows.map(r => `${esc(label(r))} ${eur(itemCost(it, r.family, r.ctx))}`).join(' · ')}${c.perM2 && m2 ? ` · ${m2.toFixed(2)} m²` : ''}</span>`;
+  // Office and reps alike: never show the Dublin / Roscommon rates on the quote form.
+  if (!isRepUser() && !isPriced(x)) return '<span style="color:var(--danger)">No price set for this item yet (Rates › Doors & sash). Reps can’t pick it.</span>';
+  return c.perM2 ? (m2 ? `${m2.toFixed(2)} m² · priced by the office` : 'Enter the width and height') : '';
 }
 const itemsSig = () => itemFams().join(',') + '|' + (q.items.some(it => it.cat === 'custom' || it.itemId === '__rep') ? boxRows().map(r => r.key + '=' + r.label).join(',') : '');
 function renderReplacements() {
