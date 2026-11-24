@@ -286,6 +286,7 @@ table.calc td.c { text-align:center; }
 .xscope.on { background:#dcf3e3; border-color:#9fd9b2; color:#146c35; }
 table.xr td, table.xr th { padding:6px 8px; } table.xr input[type=number] { width:90px; }
 .rkseg { display:inline-flex; margin-top:8px; } .rkseg button { padding:7px 14px; }
+.calc .offn { margin:0 0 6px; }
 .fu-pill { display:inline-block; padding:4px 10px; border-radius:999px; font-weight:700; font-size:12px; white-space:nowrap; }
 .fu-pill.on { background:#dcf3e3; color:#146c35; border:1px solid #9fd9b2; }
 .fu-pill.paused { background:#fff3c4; color:#7a5800; border:1px solid #f0d36b; }
@@ -1180,7 +1181,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 23 Nov 2026 · replacement / no make good</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 24 Nov 2026 · range prices on items</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -1610,7 +1611,8 @@ const xOnce = d => d && d.by === 'once per quote';
 const xQty = (d, x) => xOnce(d) ? 1 : Math.max(0, num(x.qty));
 const xLine = (d, x) => String(d.line || d.name).replace(/\{qty\}/g, String(xOnce(d) ? 1 : (num(x.qty) || 0)));
 const xCost = () => ((q && q.xtras) || []).reduce((s, x) => { const d = xOf(x); return s + (d ? num(d.price) * xQty(d, x) : 0); }, 0);
-function xInfo(x) { const d = xOf(x); if (!d) return ''; return (x.scope ? `On the quote: “${esc(xLine(d, x))}”` : 'Included in the price, not listed on the quote') ; }
+function xInfo(x) { const d = xOf(x); if (!d) return ''; const each = num(d.price), tot = each * xQty(d, x);
+  return (isRepUser() ? '' : `<span class="offn">${xOnce(d) ? `${eur(tot)} once` : `${eur(each)} ${d.by}`} · adds <b>${eur(tot)}</b> to every range</span>`) + (x.scope ? `On the quote: “${esc(xLine(d, x))}”` : 'Included in the price, not listed on the quote'); }
 function renderX() {
   if (!q) return;
   q.xtras = q.xtras || [];
@@ -1792,6 +1794,7 @@ function catItemCalc(it) {
   const m2 = c.perM2 ? num(it.w) * num(it.h) : 0;
   // Office and reps alike: never show the Dublin / Roscommon rates on the quote form.
   if (!isRepUser() && !isPriced(x)) return '<span style="color:var(--danger)">No price set for this item yet (Rates › Doors & sash). Reps can’t pick it.</span>';
+  if (!isRepUser()) return `<span class="offn">${rows.map(r => `${esc(label(r))} <b>${eur(itemCost(it, r.family, r.ctx))}</b>`).join(' · ')}${c.perM2 && m2 ? ` · ${m2.toFixed(2)} m²` : ''}</span>`;
   return c.perM2 ? (m2 ? `${m2.toFixed(2)} m² · priced by the office` : 'Enter the width and height') : '';
 }
 const itemsSig = () => itemFams().join(',') + '|' + (q.items.some(it => it.cat === 'custom' || it.itemId === '__rep') ? boxRows().map(r => r.key + '=' + r.label).join(',') : '');
@@ -1907,7 +1910,7 @@ function updateNumbers() {
       el.innerHTML = `${n} sash window${n === 1 ? '' : 's'} · ` + rs.map((r, t) => sashMissing(g, t) ? `<span style="color:var(--muted)">${esc(r.name)}: not on the price sheet</span>` : `${esc(r.name)} <b>${eur(sashCost(g, r.name) * uplift(g))}</b>`).join(' · ');
       return; }
     if (el) el.textContent = g.areaMode === 'fixed' ? (g.glazing === 'triple' ? `Fixed price ${eur(Math.max(0, num(g.fixedPrice)))} + triple glazing ${pricing.triplePct}% = ${eur(groupFixed(g))} added to every box` : `Fixed price ${eur(groupFixed(g))} added to every box`) + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
-  q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.textContent = r.scope !== false ? `On the quote: “${replLine(r)}”` : 'Included in the price, not listed on the quote'; });
+  q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.innerHTML = (isRepUser() ? '' : `<span class="offn">${boxRows().map(b => `${esc((q.boxMode === 'products' ? b.cap + ' ' : '') + b.label)} <b>${eur(replCost(r, b.ctx))}</b>`).join(' · ')}</span>`) + (r.scope !== false ? `On the quote: “${esc(replLine(r))}”` : 'Included in the price, not listed on the quote'); });
   q.items.forEach((it, i) => { const el = document.querySelector(`[data-itemcalc="${i}"]`); if (!el) return; const fams = itemFams();
     if (it.cat !== undefined) { el.innerHTML = catItemCalc(it); return; }
     if (catPrice(it) !== null && isRepUser()) { el.textContent = ''; return; }
