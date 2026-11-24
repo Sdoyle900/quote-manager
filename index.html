@@ -852,6 +852,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
   <span class="sync" id="syncPill" hidden></span>
   <button class="btn ghost" id="acctBtn" type="button"><span class="acct-dot off"></span>Connect Outlook</button>
   <button class="btn ghost" id="settingsBtn" type="button">Settings</button>
+  <button class="btn ghost" id="asRepBack" type="button" hidden>Back to office view</button>
   <button class="me" id="meBtn" type="button" aria-haspopup="true" aria-label="Your profile"><span id="meName"></span><span class="avatar" id="meAvatar"></span></button>
 </div>
 <div class="menu" id="meMenu" hidden>
@@ -1181,7 +1182,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 24 Nov 2026 · range prices on items</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 24 Nov 2026 · quiet rep view</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -3486,7 +3487,8 @@ function renderTabs() {
   const t = $('vtabs');
   const off = cloud.office && !asRep;
   t.hidden = false;
-  $('asRepBar').hidden = !asRep;
+  $('asRepBar').hidden = true;   // the rep view is kept quiet: just a "Back to office view" button beside your name
+  $('asRepBack').hidden = !asRep;
   $('accessBtn').hidden = !ACCESS_CHECKERS.includes(cloud.me);
   if ($('accessBtn').hidden) $('accessCard').hidden = true;
   t.querySelector('[data-view="asrep"]').hidden = !off || !cloud.mine;
@@ -3512,6 +3514,7 @@ function setAsRep(on) {
   window.scrollTo(0, 0);
 }
 $('asRepExit').onclick = () => { $('accessCard').hidden = true; setAsRep(false); };
+$('asRepBack').onclick = () => { $('accessCard').hidden = true; setAsRep(false); };
 
 // Access check: reads the SharePoint sharing on every folder and works out, for each rep,
 // what they can open. A rep should reach only their own folder and one price list.
