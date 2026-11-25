@@ -1188,7 +1188,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 25 Nov 2026 · option windows then doors</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 25 Nov 2026 · window group range prices</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -1489,6 +1489,16 @@ function ensureOpts(d) {
   d.opts.forEach((o, i) => { if (!Array.isArray(o.groups) || !o.groups.length) o.groups = [optGroup((rows[i + 1] || rows[0]).family)]; if (!Array.isArray(o.items)) o.items = []; sync(o.groups, (rows[i + 1] || {}).family); });
 }
 // The price boxes that belong to the option being worked on (all boxes outside options mode).
+// What one window group adds to each price box (its m² at that box's range), shown under the group.
+function grpPrices(g, gi) {
+  if (!groupArea(g)) return '';
+  const prod = q.boxMode === 'products';
+  const parts = optBoxRows().map(r => {
+    const fam = prod ? r.family : g.family, range = prod ? r.label : ((r.ctx.ranges[gi] || {}).range || r.label);
+    return [range, (groupArea(g) * rangeRate(fam, range)) * uplift(g) + ttExtra(g)];
+  }).filter((x, i, a) => a.findIndex(y => y[0] === x[0]) === i);
+  return `<span class="offn" style="margin-top:6px">${parts.map(([l, v]) => `${esc(l)} <b>${eur(v)}</b>`).join(' · ')}</span>`;
+}
 const optBoxRows = () => boxRows().filter(r => !q.optsMode || r.row === OPT);
 function boxRows() {
   ensureBoxes(q);
@@ -1786,6 +1796,9 @@ const isRepUser = () => PRACTICE || typeof cloud !== 'undefined' && cloud.state 
 function renderItems() { renderOptSections(); for (let k = 0; k < optCount(); k++) optSwap(k, () => { if (k && q.opts[k - 1] && q.opts[k - 1].sameDoors) return; renderItemsOne(); }); renderItems.sig = itemsSig(); }
 function renderItemsOne() {
   if (!iWrap()) return;
+  // Options mode: a typed price kept under another option's boxes (e.g. "p0:1") moves to this option's matching box ("p1:1").
+  if (q.optsMode) q.items.forEach(it => ['bp', 'cbp'].forEach(f => { const o = it[f]; if (!o) return;
+    optBoxRows().forEach(r => { if (o[r.key] !== undefined && o[r.key] !== '') return; const k = Object.keys(o).find(x => x.endsWith(':' + r.i) && o[x] !== '' && o[x] !== undefined); if (k) o[r.key] = o[k]; }); }));
   // a description typed before the list existed, e.g. "french door", snaps to the listed wording
   q.items.forEach(it => {
     const hit = !it.descCustom && itemOptNames().find(o => o.toLowerCase() === String(it.desc || '').trim().toLowerCase());
@@ -1831,7 +1844,7 @@ function catItemHTML(it, i) {
   const cats = extrasList().filter(c => !sashCats().includes(c) && (availItems(c).length || c.repPrice));
   const c = catOf(it), x = itemOf(it);
   const own = it.cat === 'custom' || it.itemId === '__rep';
-  const boxes = own ? boxRows() : [];
+  const boxes = own ? optBoxRows() : [];
   return `<div class="li">
     <div class="itop">
       <label class="f">Type<select data-list="items" data-i="${i}" data-f="cat">
@@ -1853,7 +1866,7 @@ function catItemHTML(it, i) {
         <option value="triple" ${it.glazing === 'triple' ? 'selected' : ''}>Triple glazed (+${esc(rates().triplePct)}%)</option></select></label></div>` : ''}
     ${x && c.perM2 ? `<div class="row"><label class="f">Width (m)<input type="number" step="0.01" min="0" data-list="items" data-i="${i}" data-f="w" value="${esc(it.w || '')}"></label><label class="f">Height (m)<input type="number" step="0.01" min="0" data-list="items" data-i="${i}" data-f="h" value="${esc(it.h || '')}"></label></div>` : ''}
     ${own ? `<div class="f" style="font-weight:600">Price for each box on this quote (€)</div>
-      <div class="bpgrid">${boxes.map(r => `<label class="f">${esc((q.boxMode === 'products' ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-list="items" data-i="${i}" data-f="bp" data-bpbox="${esc(r.key)}" value="${esc((it.bp || {})[r.key] ?? '')}"></label>`).join('')}</div>` : ''}
+      <div class="bpgrid">${boxes.map(r => `<label class="f">${esc((q.boxMode === 'products' && !q.optsMode ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-list="items" data-i="${i}" data-f="bp" data-bpbox="${esc(r.key)}" value="${esc((it.bp || {})[r.key] ?? '')}"></label>`).join('')}</div>` : ''}
     <div class="calc" data-itemcalc="${i}"></div>
   </div>`;
 }
@@ -1863,7 +1876,7 @@ function addonsHTML(it, i, c) {
   return `<div class="ad-ticks">${ads.map(a => tick('addon', `data-aid="${esc(a.id)}"`, esc(a.name), (it.addons || []).includes(a.id))).join('')}${tick('cust', '', 'Custom price', it.cust)}</div>
     ${it.cust ? `<div class="ad-cust"><div class="ad-ch">Custom price for each door, instead of the price list (€)</div>
       <label class="f">What it is for (shown on the quote)<input data-list="items" data-i="${i}" data-f="custDesc" value="${esc(it.custDesc || '')}" placeholder="e.g. Glazed side panel with leaded glass"></label>
-      <div class="bpgrid">${boxRows().map(r => `<label class="f">${esc((q.boxMode === 'products' ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-list="items" data-i="${i}" data-f="cbp" data-bpbox="${esc(r.key)}" value="${esc((it.cbp || {})[r.key] ?? '')}"></label>`).join('')}</div></div>` : ''}`;
+      <div class="bpgrid">${optBoxRows().map(r => `<label class="f">${esc((q.boxMode === 'products' && !q.optsMode ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-list="items" data-i="${i}" data-f="cbp" data-bpbox="${esc(r.key)}" value="${esc((it.cbp || {})[r.key] ?? '')}"></label>`).join('')}</div></div>` : ''}`;
 }
 function catItemCalc(it) {
   if (!it.cat) return '';
@@ -1991,7 +2004,7 @@ function updateNumbers() {
       const n = sashCount(g), rs = famById(g.family).ranges.slice(0, 3);
       el.innerHTML = `${n} sash window${n === 1 ? '' : 's'} · ` + rs.map((r, t) => sashMissing(g, t) ? `<span style="color:var(--muted)">${esc(r.name)}: not on the price sheet</span>` : `${esc(r.name)} <b>${eur(sashCost(g, r.name) * uplift(g))}</b>`).join(' · ');
       return; }
-    if (el) el.innerHTML = g.areaMode === 'fixed' ? `<span class="offn">${optBoxRows().map(r => `${esc((q.boxMode === 'products' && !q.optsMode ? r.cap + ' ' : '') + r.label)} <b>${eur(groupFixed(g, r.ctx))}</b>`).join(' · ')}</span>` + (g.glazing === 'triple' ? `includes triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
+    if (el) el.innerHTML = g.areaMode === 'fixed' ? `<span class="offn">${optBoxRows().map(r => `${esc((q.boxMode === 'products' && !q.optsMode ? r.cap + ' ' : '') + r.label)} <b>${eur(groupFixed(g, r.ctx))}</b>`).join(' · ')}</span>` + (g.glazing === 'triple' ? `includes triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : '') + grpPrices(g, gi); });
   });
   q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.innerHTML = (`<span class="offn">${boxRows().map(b => `${esc((q.boxMode === 'products' ? b.cap + ' ' : '') + b.label)} <b>${eur(replCost(r, b.ctx))}</b>`).join(' · ')}</span>`) + (r.scope !== false ? `On the quote: “${esc(replLine(r))}”` : 'Included in the price, not listed on the quote'); });
   for (let k = 0; k < optCount(); k++) optSwap(k, () => {
