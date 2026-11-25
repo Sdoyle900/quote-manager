@@ -1188,7 +1188,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 25 Nov 2026 · options, custom door price</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 25 Nov 2026 · price box choices remember inputs</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -2236,32 +2236,44 @@ $('form').addEventListener('input', e => {
     if (q.boxMode === 'products') q.prodRows[+ds.prow].feat = +el.value; else q.featuredBox = +el.value;
   } else if ('mode' in ds) {
     optEnd();
-    q.optsMode = el.value === 'options';
-    q.boxMode = q.optsMode ? 'products' : el.value; q.boxes = []; q.boxOverrides = {};
-    if (q.boxMode === 'products') {
-      // One set of windows priced in each product: fold any extra groups into group 1.
-      const gs = q.groups, g = gs[0], tt = gs.some(isTT);
-      if (gs.length > 1) {
-        if (gs.every(x => x.areaMode === 'openings')) g.openings = gs.flatMap(x => x.openings || []);
-        else if (gs.every(x => x.areaMode === 'fixed')) g.fixedPrice = gs.reduce((t, x) => t + groupFixed(x), 0);
-        else { g.manualArea = Math.round(gs.reduce((t, x) => t + groupArea(x), 0) * 100) / 100; g.areaMode = 'manual'; }
-        if (tt) { const src = gs.find(isTT); g.ttPrice = src.ttPrice; g.ttQty = gs.reduce((t, x) => t + (isTT(x) ? num(x.ttQty) : 0), 0) || ''; }
-        g.where = 'Throughout'; g.whereCustom = false;
-        q.groups = [g];
-        toast('Window groups combined into one');
-      }
-      if (!PROD_LINE_OPTS.includes(g.label) || tt) { g.label = tt ? 'Tilt and turn windows' : /sash/i.test(g.label || '') ? 'Sliding sash windows' : 'Casement windows'; g.labelCustom = false; }
-    } else q.groups.forEach(g => {
-      const f = famById(g.family);
-      if (g.label === 'Casement windows' || g.label === 'Windows') g.label = f.label;
-      else if (g.label === 'Tilt and turn windows') g.label = `${f.name} tilt and turn windows`;
-      else if (g.label === 'Sliding sash windows') g.label = `${f.name} sliding sash windows`;
-    });
-    q.featuredBox = 1; q.prodRows = null;
-    if (q.boxMode === 'ranges' && q.boxCount < 3) q.boxCount = 3;
-    ensureBoxes();
-    if (q.optsMode) { const r0 = q.prodRows[0]; q.prodRows = [r0, prodRowDefault(r0.family, r0.count)]; q.prodRows[1].feat = r0.feat; ensureBoxes(); }
-    renderGroups(); renderItems(); renderBoxes();
+    // Each price-box choice remembers its own windows and boxes, so switching back and forth never loses what was typed.
+    const fromKey = q.optsMode ? 'options' : q.boxMode, toKey = el.value;
+    const snap = () => JSON.parse(JSON.stringify({ groups:q.groups, boxes:q.boxes, boxCount:q.boxCount, prodRows:q.prodRows, boxOverrides:q.boxOverrides, featuredBox:q.featuredBox, opts:q.opts || [] }));
+    q.modeStash = q.modeStash || {};
+    if (fromKey !== toKey) q.modeStash[fromKey] = snap();
+    const st = q.modeStash[toKey];
+    if (st && fromKey !== toKey) {
+      Object.assign(q, JSON.parse(JSON.stringify(st)));
+      q.optsMode = toKey === 'options'; q.boxMode = q.optsMode ? 'products' : toKey;
+      ensureBoxes(); renderGroups(); renderItems(); renderBoxes();
+    } else {
+      q.optsMode = el.value === 'options';
+      q.boxMode = q.optsMode ? 'products' : el.value; q.boxes = []; q.boxOverrides = {};
+      if (q.boxMode === 'products') {
+        // One set of windows priced in each product: fold any extra groups into group 1.
+        const gs = q.groups, g = gs[0], tt = gs.some(isTT);
+        if (gs.length > 1) {
+          if (gs.every(x => x.areaMode === 'openings')) g.openings = gs.flatMap(x => x.openings || []);
+          else if (gs.every(x => x.areaMode === 'fixed')) g.fixedPrice = gs.reduce((t, x) => t + groupFixed(x), 0);
+          else { g.manualArea = Math.round(gs.reduce((t, x) => t + groupArea(x), 0) * 100) / 100; g.areaMode = 'manual'; }
+          if (tt) { const src = gs.find(isTT); g.ttPrice = src.ttPrice; g.ttQty = gs.reduce((t, x) => t + (isTT(x) ? num(x.ttQty) : 0), 0) || ''; }
+          g.where = 'Throughout'; g.whereCustom = false;
+          q.groups = [g];
+          toast('Window groups combined into one');
+        }
+        if (!PROD_LINE_OPTS.includes(g.label) || tt) { g.label = tt ? 'Tilt and turn windows' : /sash/i.test(g.label || '') ? 'Sliding sash windows' : 'Casement windows'; g.labelCustom = false; }
+      } else q.groups.forEach(g => {
+        const f = famById(g.family);
+        if (g.label === 'Casement windows' || g.label === 'Windows') g.label = f.label;
+        else if (g.label === 'Tilt and turn windows') g.label = `${f.name} tilt and turn windows`;
+        else if (g.label === 'Sliding sash windows') g.label = `${f.name} sliding sash windows`;
+      });
+      q.featuredBox = 1; q.prodRows = null;
+      if (q.boxMode === 'ranges' && q.boxCount < 3) q.boxCount = 3;
+      ensureBoxes();
+      if (q.optsMode) { const r0 = q.prodRows[0]; q.prodRows = [r0, prodRowDefault(r0.family, r0.count)]; q.prodRows[1].feat = r0.feat; ensureBoxes(); }
+      renderGroups(); renderItems(); renderBoxes();
+    }
   } else if (ds.list && ds.f === 'descSel') {
     const it = q.items[+ds.i];
     if (el.value === '__custom') {
