@@ -287,6 +287,9 @@ table.calc td.c { text-align:center; }
 table.xr td, table.xr th { padding:6px 8px; } table.xr input[type=number] { width:90px; }
 .rkseg { display:inline-flex; margin-top:8px; } .rkseg button { padding:7px 14px; }
 .calc .offn { margin:0 0 6px; }
+.sec > summary .ob { display:inline-block; margin-left:8px; padding:2px 9px; border-radius:999px; background:#1d6b3c; color:#fff; font-size:11px; letter-spacing:.06em; text-transform:uppercase; vertical-align:2px; }
+.sec > summary .ob.o1 { background:#6d28d9; } .sec > summary .ob.o2 { background:#b45309; } .sec > summary .ob.o3 { background:#0e7490; }
+.samed { margin:0 0 4px; }
 .fu-pill { display:inline-block; padding:4px 10px; border-radius:999px; font-weight:700; font-size:12px; white-space:nowrap; }
 .fu-pill.on { background:#dcf3e3; color:#146c35; border:1px solid #9fd9b2; }
 .fu-pill.paused { background:#fff3c4; color:#7a5800; border:1px solid #f0d36b; }
@@ -1003,6 +1006,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
       <div class="mode">
         <label class="opt"><input type="radio" name="boxMode" value="ranges" data-mode><span><b>Ranges of one product</b>e.g. Future Proof, Greenline, Odyssey. With a front and rear group, each box pairs a range for each, e.g. Future Proof / Alu-P.</span></label>
         <label class="opt"><input type="radio" name="boxMode" value="products" data-mode><span><b>Different products for the same windows</b>e.g. one price in uPVC and one in aluminium, side by side. Add timber or alu-clad if needed, or show more than one range per product.</span></label>
+        <label class="opt"><input type="radio" name="boxMode" value="options" data-mode><span><b>Different products, different windows</b>e.g. Option 1 uPVC sliding sash, Option 2 uPVC casement. Each option gets its own Windows and Doors sections.</span></label>
       </div>
       <div class="cnt" id="countRow">Number of boxes <span class="seg" id="countSeg"></span></div>
       <div style="overflow-x:auto" id="boxTableWrap"><table class="calc" id="boxTable"></table></div>
@@ -1024,12 +1028,14 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
       <p class="hint" id="groupHint">Add a second group when part of the house is a different product, e.g. uPVC to the front and aluminium to the rear.</p>
       <div class="areabox"><span>Total window area</span><b id="areaOut">0.00 m²</b></div>
     </div></details>
+    <div id="optWinSecs"></div>
 
     <details class="sec" open><summary>4. Doors</summary><div class="body">
       <p class="hint">Doors added to every price box, such as a composite door or an aluminium slider. Each is listed under scope of works.</p>
       <div id="itemsWrap" class="list"></div>
       <button class="btn sm" id="addItem" type="button">+ Add door</button>
     </div></details>
+    <div id="optDoorSecs"></div>
 
     <details class="sec" open><summary>5. Extra items in the price</summary><div class="body">
       <p class="hint">Other items added to every price box, such as vents or cills. Tap “Show in scope of works” to list an item on the quote; otherwise it is just included in the price.</p>
@@ -1182,7 +1188,7 @@ body.viewonly #profile [data-fu], body.viewonly #profile [data-outcome] { pointe
 
 <div class="modal-back" id="settingsModal" hidden>
   <form class="modal" id="settingsForm" novalidate>
-    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 24 Nov 2026 · reps see range prices</span></h3>
+    <h3>Settings <span style="font-size:11px;font-weight:600;color:var(--muted)">version 25 Nov 2026 · options, custom door price</span></h3>
     <p class="err" id="setMsg" hidden></p>
     <div class="evt" id="setAcct"></div>
     <div class="row">
@@ -1335,7 +1341,8 @@ function itemCost(it, fam, ctx) {
       return v * qty * uplift(it);
     }
     const c = catOf(it), x = itemOf(it); if (!c || !x) return 0;
-    const each = num(priceArr(x)[tierFor(c, ctx)]) * (c.perM2 ? num(it.w) * num(it.h) : 1) + addonsCost(it, c, ctx);
+    // Custom price ticked: the typed figure replaces the price-list price of the door (ticked add-ons still count).
+    const each = (it.cust ? 0 : num(priceArr(x)[tierFor(c, ctx)]) * (c.perM2 ? num(it.w) * num(it.h) : 1)) + addonsCost(it, c, ctx);
     return each * qty * uplift(it);
   }
   if (it.mode === 'sqm') return num(it.w) * num(it.h) * qty * rateOf(it.rate) * uplift(it);
@@ -1366,9 +1373,11 @@ function replLine(r) {
   return t;
 }
 const isTT = g => /tilt\s*(and|&|\+|n)\s*turn/i.test(g.label || '');
-const groupFixed = g => g.areaMode === 'fixed' ? Math.max(0, num(g.fixedPrice)) * uplift(g) : 0;
+// Fixed price: one figure per price box (g.fbp keyed by box), falling back to the single figure older quotes have.
+const fixedEach = (g, ctx) => { const v = ctx && g.fbp && g.fbp[ctx.key]; return Math.max(0, v !== undefined && v !== '' ? num(v) : num(g.fixedPrice)); };
+const groupFixed = (g, ctx) => g.areaMode === 'fixed' ? fixedEach(g, ctx) * uplift(g) : 0;
 const ttExtra = g => isTT(g) ? Math.max(0, num(g.ttPrice)) * Math.max(0, num(g.ttQty)) : 0;
-function itemsTotal(fam, ctx) { return xCost() + q.items.reduce((s, it) => s + itemCost(it, fam, ctx), 0) + (q.replacements || []).reduce((s, r) => s + replCost(r, ctx), 0) + Math.max(0, num(q.ctTax)) + q.groups.reduce((s, g) => s + ttExtra(g) + groupFixed(g), 0); }
+function itemsTotal(fam, ctx) { return xCost() + q.items.reduce((s, it) => s + itemCost(it, fam, ctx), 0) + (q.replacements || []).reduce((s, r) => s + replCost(r, ctx), 0) + Math.max(0, num(q.ctTax)) + q.groups.reduce((s, g) => s + ttExtra(g) + groupFixed(g, ctx), 0); }
 function roundTo(n) { const r = num(q.rounding); return r > 0 ? Math.round(n / r) * r : Math.round(n * 100) / 100; }
 
 // Price boxes: up to 4. In "ranges" mode each box picks a range for every window group (paired, e.g. Future Proof / Alu-P).
@@ -1409,6 +1418,7 @@ function ensureBoxes(d) {
   }
   d.boxes.length = 4;
   if (d.boxMode === 'products') ensureProdRows(d);
+  ensureOpts(d);
   if (typeof d.featuredBox !== 'number') d.featuredBox = Math.min(1, d.boxCount - 1);
   if (d.featuredBox >= d.boxCount) d.featuredBox = d.boxCount - 1;
   return d;
@@ -1447,11 +1457,44 @@ function ensureProdRows(d) {
   });
   delete d.featuredKey;
 }
+// ---- "Different products, different windows" (q.optsMode): each option (product row) has its own windows and doors.
+// Option 1 is q.groups / q.items; options 2+ live in q.opts[k-1] = { groups, items, sameDoors }.
+// optSwap(k, fn) runs fn with q.groups / q.items pointing at option k; OPT is the option being worked on.
+let OPT = 0;
+const optCount = () => q && q.optsMode ? (q.prodRows || []).length : 1;
+function optData(k) {
+  const b = q._base || { groups:q.groups, items:q.items };
+  if (!k || !q.optsMode) return b;
+  const o = (q.opts || [])[k - 1]; if (!o) return b;
+  return { groups:o.groups, items:o.sameDoors ? b.items : o.items };
+}
+function optSwap(k, fn) {
+  if (!q || !q.optsMode) return fn();
+  const prev = { groups:q.groups, items:q.items, base:q._base, opt:OPT }, d = optData(k);
+  if (!q._base) q._base = { groups:q.groups, items:q.items };
+  q.groups = d.groups; q.items = d.items; OPT = k;
+  try { return fn(); } finally { q.groups = prev.groups; q.items = prev.items; q._base = prev.base; OPT = prev.opt; }
+}
+function ensureOpts(d) {
+  if (d.boxMode !== 'products') d.optsMode = false;
+  if (!d.optsMode) return;
+  const rows = d.prodRows || [];
+  if (!Array.isArray(d.opts)) d.opts = [];
+  const optGroup = fam => Object.assign(newGroup(fam), { label:'Casement windows', labelCustom:false });
+  while (d.opts.length < rows.length - 1) d.opts.push({ groups:[optGroup(rows[d.opts.length + 1].family)], items:[], sameDoors:false });
+  d.opts.length = Math.max(0, rows.length - 1);
+  const baseG = d === q && q._base ? q._base.groups : d.groups;
+  const sync = (gs, fam) => (gs || []).forEach(g => { if (fam && g.family !== fam) { if (!g.labelCustom && g.label === famById(g.family).label) g.label = 'Casement windows'; g.family = fam; if (g.areaMode === 'sash' && !sashCat(fam)) { g.areaMode = 'manual'; g.winQty = ''; } } });
+  if (rows[0]) sync(baseG, rows[0].family);
+  d.opts.forEach((o, i) => { if (!Array.isArray(o.groups) || !o.groups.length) o.groups = [optGroup((rows[i + 1] || rows[0]).family)]; if (!Array.isArray(o.items)) o.items = []; sync(o.groups, (rows[i + 1] || {}).family); });
+}
+// The price boxes that belong to the option being worked on (all boxes outside options mode).
+const optBoxRows = () => boxRows().filter(r => !q.optsMode || r.row === OPT);
 function boxRows() {
   ensureBoxes(q);
   if (q.boxMode === 'products') {
     const out = [];
-    q.prodRows.forEach((pr, ri) => {
+    q.prodRows.forEach((pr, ri) => optSwap(ri, () => {
       const f = famById(pr.family);
       for (let i = 0; i < pr.count; i++) {
         const key = `p${ri}:${i}`, range = pr.sel[i];
@@ -1462,7 +1505,7 @@ function boxRows() {
         const final = ov !== undefined && ov !== '' ? num(ov) : calc;
         out.push({ i, key, row:ri, family:f.id, windows, calc, final, ov, label:range, cap:f.name, featured:pr.feat === i, ctx });
       }
-    });
+    }));
     return out;
   }
   ensureBoxes(q);
@@ -1544,13 +1587,43 @@ function pickField(gi, title, key, opts, val, custom, ph) {
     ${isCustom ? `<span class="micwrap"><input data-g="${gi}" data-f="${key}" value="${esc(val)}" placeholder="${esc(ph)}" aria-label="${esc(title)} (custom)"><button type="button" class="mic" aria-label="Speak to type" title="Speak to type (click again to stop)"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z" fill="currentColor"/></svg></button></span>` : ''}
   </div>`;
 }
-function renderGroups() {
+const gWrap = () => OPT ? document.querySelector(`[data-optw="${OPT}"] .gwrap`) : $('groupsWrap');
+const iWrap = () => OPT ? document.querySelector(`[data-opti="${OPT}"] .iwrap`) : $('itemsWrap');
+function renderOptSections() {
+  const n = optCount(), sig = q.optsMode ? n + ':' + (q.opts || []).map(o => o.sameDoors ? 1 : 0).join('') : '0';
+  if (renderOptSections.sig === sig && $('optWinSecs').children.length === Math.max(0, n - 1)) return;
+  renderOptSections.sig = sig;
+  const ks = []; for (let k = 1; k < n; k++) ks.push(k);
+  $('optWinSecs').innerHTML = ks.map(k => `<details class="sec" open data-optw="${k}" data-t="Windows"><summary>Windows</summary><div class="body">
+      <div class="gwrap list"></div>
+      <button class="btn sm" type="button" data-optaddgroup style="justify-self:start">+ Add window group</button>
+      <div class="areabox"><span>Total window area</span><b data-areaout="${k}">0.00 m²</b></div></div></details>`).join('');
+  $('optDoorSecs').innerHTML = ks.map(k => { const same = !!(q.opts[k - 1] || {}).sameDoors; return `<details class="sec" open data-opti="${k}" data-t="Doors"><summary>Doors</summary><div class="body">
+      <button type="button" class="xscope samed ${same ? 'on' : ''}" data-samedoors="${k}" aria-pressed="${same}" style="justify-self:start">${same ? '✓ Same doors as Option 1' : 'Same doors as Option 1'}</button>
+      ${same ? `<p class="hint" style="margin:0">Option ${k + 1} uses the same doors as Option 1. Tap the button again to give it its own doors (starting from a copy of Option 1’s).</p>`
+        : `<p class="hint" style="margin:0">Doors for Option ${k + 1} only.</p><div class="iwrap list"></div><button class="btn sm" type="button" data-optadditem>+ Add door</button>`}</div></details>`; }).join('');
+}
+// Number the sections in order, and badge the Windows / Doors sections with their option in options mode.
+function renumberSections() {
+  let n = 0;
+  document.querySelectorAll('#form details.sec').forEach(d => {
+    const sm = d.querySelector(':scope > summary'); if (!sm) return;
+    if (d.dataset.t === undefined) { const m = sm.textContent.trim().match(/^\d+\.\s*(.*)$/); if (!m) return; d.dataset.t = m[1]; }
+    if (d.hidden || d.closest('[hidden]')) return;
+    n++;
+    const k = d.dataset.optw !== undefined ? +d.dataset.optw : d.dataset.opti !== undefined ? +d.dataset.opti : (q && q.optsMode && /^(Windows|Doors)$/.test(d.dataset.t) ? 0 : -1);
+    sm.innerHTML = `<span>${n}. ${esc(d.dataset.t)}${k >= 0 ? ` <span class="ob o${k}">Option ${k + 1}</span>` : ''}</span>`;
+  });
+}
+function renderGroups() { renderOptSections(); for (let k = 0; k < optCount(); k++) optSwap(k, renderGroupsOne); renumberSections(); }
+function renderGroupsOne() {
   const prod = q.boxMode === 'products';
-  $('addGroup').hidden = prod; $('groupHint').hidden = prod;
+  if (!OPT) $('groupHint').hidden = prod;
+  if (!gWrap()) return;
   const sel = (v, opts) => opts.map(([val, txt]) => `<option value="${val}" ${v === val ? 'selected' : ''}>${esc(txt)}</option>`).join('');
-  $('groupsWrap').innerHTML = q.groups.map((g, gi) => `
+  gWrap().innerHTML = q.groups.map((g, gi) => `
     <div class="li wgrp">
-      <div class="gh"><b>${prod && q.groups.length === 1 ? 'Windows (priced in each product)' : `Window group ${gi + 1}`}</b>${q.groups.length > 1 ? `<button class="btn x" type="button" data-delg="${gi}" aria-label="Remove window group ${gi + 1}">✕</button>` : ''}</div>
+      <div class="gh"><b>${prod && q.groups.length === 1 ? (q.optsMode ? 'Windows' : 'Windows (priced in each product)') : `Window group ${gi + 1}`}</b>${q.groups.length > 1 ? `<button class="btn x" type="button" data-delg="${gi}" aria-label="Remove window group ${gi + 1}">✕</button>` : ''}</div>
       <div class="row">
         ${prod ? '' : `<label class="f">Product family<select data-g="${gi}" data-f="family">${sel(g.family, pricing.families.map(f => [f.id, f.name]))}</select></label>`}
         <label class="f">Glazing<select data-g="${gi}" data-f="glazing">${sel(g.glazing === 'triple' ? 'triple' : 'double', [['double','Double glazed'],['triple','Triple glazed']])}</select></label>
@@ -1561,7 +1634,7 @@ function renderGroups() {
       </div>
       <div class="row">
         <label class="f">Work out area from<select data-g="${gi}" data-f="areaMode">${sel(['openings','fixed','sash'].includes(g.areaMode) ? g.areaMode : 'manual', [['manual','Total area I type in'],['openings','List of openings (W × H)'],['fixed','Fixed price']].concat((sashCat(g.family) || g.areaMode === 'sash') ? [['sash','Sash price list (each window)']] : []))}</select></label>
-        ${g.areaMode === 'fixed' ? `<label class="f">Fixed price (€, excl. VAT)<input type="number" step="1" min="0" data-g="${gi}" data-f="fixedPrice" value="${esc(g.fixedPrice ?? '')}" placeholder="e.g. 4500"></label>` : g.areaMode === 'openings' || g.areaMode === 'sash' ? '' : `<label class="f">Total area (m²)<input type="number" step="0.01" min="0" data-g="${gi}" data-f="manualArea" value="${esc(g.manualArea)}"></label>`}
+        ${g.areaMode === 'fixed' ? '' : g.areaMode === 'openings' || g.areaMode === 'sash' ? '' : `<label class="f">Total area (m²)<input type="number" step="0.01" min="0" data-g="${gi}" data-f="manualArea" value="${esc(g.manualArea)}"></label>`}
       </div>
       ${g.areaMode === 'openings' ? `<div class="list">${g.openings.map((o, oi) => `
         <div class="li open">
@@ -1573,6 +1646,8 @@ function renderGroups() {
         </div>`).join('')}</div>
         <button class="btn sm" type="button" data-addo="${gi}" style="justify-self:start">+ Add opening</button>` : ''}
       ${g.areaMode === 'sash' ? sashRowsHTML(g, gi) : ''}
+      ${g.areaMode === 'fixed' ? `<div class="ad-cust"><div class="ad-ch">Fixed price for each box (€, excl. VAT)</div>
+        <div class="bpgrid">${optBoxRows().map(r => `<label class="f">${esc((q.boxMode === 'products' && !q.optsMode ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-g="${gi}" data-f="fbp" data-key="${esc(r.key)}" value="${esc((g.fbp || {})[r.key] ?? '')}" placeholder="${num(g.fixedPrice) ? esc(g.fixedPrice) : 'e.g. 18000'}"></label>`).join('')}</div></div>` : ''}
       <div class="row" ${g.areaMode === 'sash' ? 'hidden' : ''}>
         <label class="f">Number of windows<input type="number" step="1" min="0" data-g="${gi}" data-f="winQty" value="${esc(g.winQty ?? '')}" placeholder="${g.areaMode === 'openings' ? 'Counted from openings' : 'e.g. 8'}"></label>
       </div>
@@ -1706,7 +1781,9 @@ let asRep = false;   // office previewing the rep screen
 // Only these people get the "Check what each rep can open" button
 const ACCESS_CHECKERS = ['seand@sdwindows.ie'];
 const isRepUser = () => PRACTICE || typeof cloud !== 'undefined' && cloud.state !== 'off' && cloud.state !== 'noaccess' && (!cloud.office || asRep);
-function renderItems() {
+function renderItems() { renderOptSections(); for (let k = 0; k < optCount(); k++) optSwap(k, () => { if (k && q.opts[k - 1] && q.opts[k - 1].sameDoors) return; renderItemsOne(); }); renderItems.sig = itemsSig(); }
+function renderItemsOne() {
+  if (!iWrap()) return;
   // a description typed before the list existed, e.g. "french door", snaps to the listed wording
   q.items.forEach(it => {
     const hit = !it.descCustom && itemOptNames().find(o => o.toLowerCase() === String(it.desc || '').trim().toLowerCase());
@@ -1714,7 +1791,7 @@ function renderItems() {
   });
   const fams = itemFams();
   renderItems.sig = itemsSig();
-  $('itemsWrap').innerHTML = q.items.map((it, i) => it.cat !== undefined ? catItemHTML(it, i) : (() => {
+  iWrap().innerHTML = q.items.map((it, i) => it.cat !== undefined ? catItemHTML(it, i) : (() => {
     const opts = itemOptNames();
     const custom = it.descCustom || (it.desc && !opts.includes(it.desc));
     const cp = catPrice(it);
@@ -1782,14 +1859,14 @@ function addonsHTML(it, i, c) {
   const ads = catAddons(c), rep = isRepUser();
   const tick = (f, extra, label, on) => `<label class="ad-tick"><input type="checkbox" data-list="items" data-i="${i}" data-f="${f}" ${extra} ${on ? 'checked' : ''}> ${label}</label>`;
   return `<div class="ad-ticks">${ads.map(a => tick('addon', `data-aid="${esc(a.id)}"`, esc(a.name), (it.addons || []).includes(a.id))).join('')}${tick('cust', '', 'Custom price', it.cust)}</div>
-    ${it.cust ? `<div class="ad-cust"><div class="ad-ch">Custom price: extra added to each price box (€)</div>
+    ${it.cust ? `<div class="ad-cust"><div class="ad-ch">Custom price for each door, instead of the price list (€)</div>
       <label class="f">What it is for (shown on the quote)<input data-list="items" data-i="${i}" data-f="custDesc" value="${esc(it.custDesc || '')}" placeholder="e.g. Glazed side panel with leaded glass"></label>
       <div class="bpgrid">${boxRows().map(r => `<label class="f">${esc((q.boxMode === 'products' ? r.cap + ' · ' : '') + r.label)}<input type="number" step="1" min="0" data-list="items" data-i="${i}" data-f="cbp" data-bpbox="${esc(r.key)}" value="${esc((it.cbp || {})[r.key] ?? '')}"></label>`).join('')}</div></div>` : ''}`;
 }
 function catItemCalc(it) {
   if (!it.cat) return '';
-  const rows = boxRows();
-  const label = r => (q.boxMode === 'products' ? r.cap + ' ' : '') + r.label;
+  const rows = optBoxRows();
+  const label = r => (q.boxMode === 'products' && !q.optsMode ? r.cap + ' ' : '') + r.label;
   if (it.cat === 'custom' || it.itemId === '__rep') return rows.map(r => `${esc(label(r))} +${eur(itemCost(it, r.family, r.ctx))}`).join(' · ');
   const c = catOf(it), x = itemOf(it); if (!x) return '';
   const m2 = c.perM2 ? num(it.w) * num(it.h) : 0;
@@ -1854,7 +1931,7 @@ $('regionTabs').addEventListener('click', e => {
 function renderBoxes() {
   if (q && renderItems.sig !== undefined && renderItems.sig !== itemsSig()) renderItems();
   ensureBoxes();
-  document.querySelectorAll('[data-mode]').forEach(r => { r.checked = r.value === q.boxMode; });
+  document.querySelectorAll('[data-mode]').forEach(r => { r.checked = r.value === (q.optsMode ? 'options' : q.boxMode); });
   const isProd = q.boxMode === 'products';
   $('countRow').hidden = isProd; $('boxTableWrap').hidden = isProd; $('prodWrap').hidden = !isProd;
   if (isProd) { renderProdRows(); return; }
@@ -1884,7 +1961,7 @@ function renderProdRows() {
   const used = q.prodRows.map(r => r.family);
   $('prodWrap').innerHTML = q.prodRows.map((pr, ri) => `
     <div class="li wgrp">
-      <div class="gh"><b>Product ${ri + 1}</b>${q.prodRows.length > 1 ? `<button class="btn x" type="button" data-delp="${ri}" aria-label="Remove product ${ri + 1}">✕</button>` : ''}</div>
+      <div class="gh"><b>${q.optsMode ? 'Option' : 'Product'} ${ri + 1}</b>${q.prodRows.length > (q.optsMode ? 2 : 1) ? `<button class="btn x" type="button" data-delp="${ri}" aria-label="Remove ${q.optsMode ? 'option' : 'product'} ${ri + 1}">✕</button>` : ''}</div>
       <div class="pr-top">
         <label class="f">Product<select data-prow="${ri}" data-pf="family">${pricing.families.map(f => `<option value="${f.id}" ${f.id === pr.family ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></label>
         <div class="f" style="display:grid;gap:3px;font-size:11.5px;color:var(--muted);font-weight:600">Boxes<span class="seg">${[1, 2, 3, 4].slice(0, Math.max(1, Math.min(4, famById(pr.family).ranges.length))).map(n => `<button type="button" class="${n === pr.count ? 'on' : ''}" data-pcount="${n}" data-prow="${ri}" aria-pressed="${n === pr.count}">${n}</button>`).join('')}</span></div>
@@ -1899,23 +1976,29 @@ function renderProdRows() {
         <tr><td colspan="5"><label class="check" style="font-weight:400;color:var(--muted)"><input type="radio" name="feat-${ri}" value="-1" data-feat data-prow="${ri}" ${pr.feat === -1 ? 'checked' : ''} style="width:auto"> No highlight for ${esc(famById(pr.family).name)}</label></td></tr>
       </table>
     </div>`).join('') +
-    (q.prodRows.length < pricing.families.length ? `<button class="btn sm" type="button" data-addp style="justify-self:start">+ Add product (e.g. timber or alu-clad)</button>` : '');
+    (q.optsMode ? (q.prodRows.length < 4 ? `<button class="btn sm" type="button" data-addp style="justify-self:start">+ Add option</button>` : '')
+      : q.prodRows.length < pricing.families.length ? `<button class="btn sm" type="button" data-addp style="justify-self:start">+ Add product (e.g. timber or alu-clad)</button>` : '');
 }
 function updateNumbers() {
   if ($('tripPctLbl')) $('tripPctLbl').textContent = pricing.triplePct;
   if ($('showTriple')) { const allT = q.groups.every(g => g.glazing === 'triple'); $('showTriple').disabled = allT; if (allT) $('showTriple').checked = false; }
   if ($('ctOut')) $('ctOut').textContent = num(q.ctTax) > 0 ? `Adds ${eur(num(q.ctTax), 2)} to every price box. It isn't mentioned anywhere on the quote.` : 'Added to every price box. It isn\'t mentioned anywhere on the quote.';
-  $('areaOut').textContent = area().toFixed(2) + ' m²';
-  q.groups.forEach((g, gi) => { const el = document.querySelector(`[data-garea="${gi}"]`); if (el && g.areaMode === 'sash') {
+  for (let k = 0; k < optCount(); k++) optSwap(k, () => {
+  const ao = k ? document.querySelector(`[data-areaout="${k}"]`) : $('areaOut'); if (ao) ao.textContent = area().toFixed(2) + ' m²';
+  q.groups.forEach((g, gi) => { const el = gWrap() && gWrap().querySelector(`[data-garea="${gi}"]`); if (el && g.areaMode === 'sash') {
       const n = sashCount(g), rs = famById(g.family).ranges.slice(0, 3);
       el.innerHTML = `${n} sash window${n === 1 ? '' : 's'} · ` + rs.map((r, t) => sashMissing(g, t) ? `<span style="color:var(--muted)">${esc(r.name)}: not on the price sheet</span>` : `${esc(r.name)} <b>${eur(sashCost(g, r.name) * uplift(g))}</b>`).join(' · ');
       return; }
-    if (el) el.textContent = g.areaMode === 'fixed' ? (g.glazing === 'triple' ? `Fixed price ${eur(Math.max(0, num(g.fixedPrice)))} + triple glazing ${pricing.triplePct}% = ${eur(groupFixed(g))} added to every box` : `Fixed price ${eur(groupFixed(g))} added to every box`) + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
+    if (el) el.innerHTML = g.areaMode === 'fixed' ? `<span class="offn">${optBoxRows().map(r => `${esc((q.boxMode === 'products' && !q.optsMode ? r.cap + ' ' : '') + r.label)} <b>${eur(groupFixed(g, r.ctx))}</b>`).join(' · ')}</span>` + (g.glazing === 'triple' ? `includes triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))}` : '') : groupArea(g).toFixed(2) + ' m²' + (g.glazing === 'triple' ? ` · triple glazing +${pricing.triplePct}%` : '') + (ttExtra(g) ? ` · tilt and turn extra ${eur(ttExtra(g))} added to every box` : ''); });
+  });
   q.replacements.forEach((r, i) => { const el = document.querySelector(`[data-replcalc="${i}"]`); if (el) el.innerHTML = (`<span class="offn">${boxRows().map(b => `${esc((q.boxMode === 'products' ? b.cap + ' ' : '') + b.label)} <b>${eur(replCost(r, b.ctx))}</b>`).join(' · ')}</span>`) + (r.scope !== false ? `On the quote: “${esc(replLine(r))}”` : 'Included in the price, not listed on the quote'); });
-  q.items.forEach((it, i) => { const el = document.querySelector(`[data-itemcalc="${i}"]`); if (!el) return; const fams = itemFams();
+  for (let k = 0; k < optCount(); k++) optSwap(k, () => {
+  if (k && q.opts[k - 1] && q.opts[k - 1].sameDoors) return;
+  q.items.forEach((it, i) => { const el = iWrap() && iWrap().querySelector(`[data-itemcalc="${i}"]`); if (!el) return; const fams = itemFams();
     if (it.cat !== undefined) { el.innerHTML = catItemCalc(it); return; }
     if (catPrice(it) !== null && isRepUser()) { el.textContent = ''; return; }
     el.textContent = it.mode !== 'sqm' && fams.length > 1 ? 'Adds ' + fams.map(fid => `${famById(fid).name} ${eur(itemCost(it, fid), 2)}`).join(' · ') + ' to that product\'s boxes' : 'Adds ' + eur(itemCost(it), 2) + ' to every box'; });
+  });
   boxRows().forEach(r => { const el = document.querySelector(`[data-boxprice="${r.key}"]`); if (el) el.textContent = money(r.calc); });
 }
 
@@ -1978,10 +2061,12 @@ function docHTML() {
     const last = q.prodRows.length - 1;
     main = q.prodRows.map((pr, ri) => {
       const f = famById(pr.family);
+      const oName = q.optsMode ? optSwap(ri, () => { const l = String((q.groups[0] || {}).label || '').trim(); return !l ? f.name : l.toLowerCase().includes(f.name.toLowerCase()) ? l : `${f.name} ${l.charAt(0).toLowerCase()}${l.slice(1)}`; }) : f.name;
+      const oGlz = q.optsMode ? optSwap(ri, () => q.groups.every(g => g.glazing === 'triple') ? 'triple glazed' : 'double glazed') : glz;
       return `<div class="blk">${ri === 0 ? '<h2>Your options</h2>' : ''}
         <div class="optblk f-${f.id}">
-          <div class="opthead"><span class="optnum">Option ${ri + 1}</span><span class="optname">${esc(f.name)} <span>· ${glz}</span></span></div>
-          <div class="optlbl">Scope of works</div>${scopeHTML(scopeLines(f), 'tight')}
+          <div class="opthead"><span class="optnum">Option ${ri + 1}</span><span class="optname">${esc(oName)} <span>· ${oGlz}</span></span></div>
+          <div class="optlbl">Scope of works</div>${scopeHTML(optSwap(ri, () => scopeLines(f)), 'tight')}
           <div class="optlbl">${tripOn ? 'Price · double glazed' : 'Price'}</div>${oneGrid(rows.filter(r => r.row === ri), false)}
           ${tripOn ? `<div class="optlbl optlbl2">Price · triple glazed</div>${oneGrid(rows.filter(r => r.row === ri), true)}` : ''}
         </div>${ri === last ? vatNote : ''}</div>`;
@@ -2073,6 +2158,27 @@ function checkOverflow() {
 }
 
 // ---------- form events ----------
+// Events inside an option's own Windows / Doors section work on that option's windows and doors.
+let optEv = null;
+function optBegin(e) {
+  if (!q || !q.optsMode || optEv) return;
+  const oc = e.target.closest && e.target.closest('[data-optw],[data-opti]'); if (!oc) return;
+  const k = +(oc.dataset.optw ?? oc.dataset.opti); if (!k) return;
+  const d = optData(k);
+  optEv = { q, groups:q.groups, items:q.items, base:q._base, opt:OPT };
+  if (!q._base) q._base = { groups:q.groups, items:q.items };
+  q.groups = d.groups; q.items = d.items; OPT = k;
+  setTimeout(optEnd, 0);
+}
+function optEnd() { if (!optEv) return; const o = optEv; optEv = null; if (o.q === q) { q.groups = o.groups; q.items = o.items; q._base = o.base; } OPT = o.opt; }
+['input', 'change', 'click', 'keydown'].forEach(t => { $('form').addEventListener(t, optBegin, true); document.addEventListener(t, optEnd); });
+$('form').addEventListener('click', e => {
+  const t = e.target.closest('[data-optadditem],[data-optaddgroup],[data-samedoors]'); if (!t || !q.optsMode) return;
+  if (t.hasAttribute('data-optadditem')) { q.items.push({ cat:'', itemId:'', qty:1, glazing:'double', bp:{} }); renderItems(); }
+  else if (t.hasAttribute('data-optaddgroup')) { const g = Object.assign(newGroup(q.groups[0] ? q.groups[0].family : 'upvc'), { label:'Casement windows', labelCustom:false }); if (q.groups.length === 1 && /^throughout$/i.test(q.groups[0].where || '')) { q.groups[0].where = 'Front of house'; g.where = 'Rear of house'; } else g.where = ''; q.groups.push(g); renderGroups(); }
+  else { const k = +t.dataset.samedoors, o = q.opts[k - 1]; optEnd(); o.sameDoors = !o.sameDoors; if (!o.sameDoors) o.items = JSON.parse(JSON.stringify(q.items)); renderItems(); renumberSections(); }
+  refresh();
+});
 $('form').addEventListener('input', e => {
   const el = e.target, ds = el.dataset;
   if (ds.k) {
@@ -2097,6 +2203,7 @@ $('form').addEventListener('input', e => {
         refresh();
         return;
       }
+      if (ds.f === 'fbp') { g.fbp = g.fbp || {}; g.fbp[ds.key] = el.value; refresh(); return; }
       const prev = g[ds.f], wasTT = isTT(g);
       g[ds.f] = el.value;
       if (ds.f === 'ttPrice' && num(el.value) > 0) { pricing.ttLast = el.value; store.set('sdw-pricing', pricing); }
@@ -2123,12 +2230,14 @@ $('form').addEventListener('input', e => {
     if (el.value === '') delete q.boxOverrides[ds.bov]; else q.boxOverrides[ds.bov] = el.value;
   } else if (ds.prow !== undefined && (ds.pf || ds.pi !== undefined)) {
     const pr = q.prodRows[+ds.prow];
-    if (ds.pf === 'family') { const d = prodRowDefault(el.value, pr.count); pr.family = d.family; pr.sel = d.sel; pr.count = d.count; ensureBoxes(); renderBoxes(); }
+    if (ds.pf === 'family') { const d = prodRowDefault(el.value, pr.count); pr.family = d.family; pr.sel = d.sel; pr.count = d.count; ensureBoxes(); renderBoxes(); if (q.optsMode) { renderGroups(); renderItems(); } }
     else pr.sel[+ds.pi] = el.value;
   } else if ('feat' in ds) {
     if (q.boxMode === 'products') q.prodRows[+ds.prow].feat = +el.value; else q.featuredBox = +el.value;
   } else if ('mode' in ds) {
-    q.boxMode = el.value; q.boxes = []; q.boxOverrides = {};
+    optEnd();
+    q.optsMode = el.value === 'options';
+    q.boxMode = q.optsMode ? 'products' : el.value; q.boxes = []; q.boxOverrides = {};
     if (q.boxMode === 'products') {
       // One set of windows priced in each product: fold any extra groups into group 1.
       const gs = q.groups, g = gs[0], tt = gs.some(isTT);
@@ -2150,7 +2259,9 @@ $('form').addEventListener('input', e => {
     });
     q.featuredBox = 1; q.prodRows = null;
     if (q.boxMode === 'ranges' && q.boxCount < 3) q.boxCount = 3;
-    ensureBoxes(); renderGroups(); renderBoxes();
+    ensureBoxes();
+    if (q.optsMode) { const r0 = q.prodRows[0]; q.prodRows = [r0, prodRowDefault(r0.family, r0.count)]; q.prodRows[1].feat = r0.feat; ensureBoxes(); }
+    renderGroups(); renderItems(); renderBoxes();
   } else if (ds.list && ds.f === 'descSel') {
     const it = q.items[+ds.i];
     if (el.value === '__custom') {
@@ -2202,7 +2313,20 @@ $('form').addEventListener('click', e => {
     }
     pr.count = n; ensureBoxes(); renderBoxes();
   }
-  else if (ds.delp !== undefined) { q.prodRows.splice(+ds.delp, 1); q.boxOverrides = {}; ensureBoxes(); renderBoxes(); }
+  else if (ds.delp !== undefined) {
+    const ri = +ds.delp;
+    if (q.optsMode) {
+      optEnd();
+      if (ri === 0) { const o = q.opts[0]; if (!o.sameDoors) q.items = o.items; q.groups = o.groups; q.opts.shift(); }
+      else q.opts.splice(ri - 1, 1);
+    }
+    q.prodRows.splice(ri, 1); q.boxOverrides = {}; ensureBoxes(); renderBoxes();
+    if (q.optsMode) { renderGroups(); renderItems(); }
+  }
+  else if ('addp' in ds && q.optsMode) {
+    const last = q.prodRows[q.prodRows.length - 1];
+    q.prodRows.push(prodRowDefault(last.family, last.count)); ensureBoxes(); renderBoxes(); renderGroups(); renderItems();
+  }
   else if ('addp' in ds) {
     const used = q.prodRows.map(r => r.family);
     const next = ['upvc', 'alu', 'hardwood', 'aluclad'].find(id => !used.includes(id) && pricing.families.some(f => f.id === id)) || (pricing.families.find(f => !used.includes(f.id)) || pricing.families[0]).id;
@@ -2213,8 +2337,9 @@ $('form').addEventListener('click', e => {
 });
 $('addGroup').onclick = () => {
   const used = q.groups.map(g => g.family);
-  const f = pricing.families.find(x => !used.includes(x.id)) || pricing.families[0];
+  const f = q.boxMode === 'products' ? famById(q.groups[0] ? q.groups[0].family : 'upvc') : pricing.families.find(x => !used.includes(x.id)) || pricing.families[0];
   const g = newGroup(f.id);
+  if (q.boxMode === 'products') { g.label = 'Casement windows'; g.labelCustom = false; }
   if (q.groups.length === 1) {
     if (/^throughout$/i.test(q.groups[0].where || '')) q.groups[0].where = 'Front of house';
     g.where = 'Rear of house';
@@ -2750,7 +2875,7 @@ function renderDoc() {
   checkOverflow();
 }
 function refresh(touch = true) {
-  updateNumbers(); renderDoc();
+  optSwap(0, () => { updateNumbers(); renderDoc(); });
   if (cur && touch) { cur.updated = Date.now(); saveSoon(); }
 }
 function fullRender() { ensureBoxes(); fillSimpleFields(); syncTitle(); renderGroups(); renderReplacements(); renderItems(); renderX(); renderUpgrades(); renderPricing(); renderBoxes(); refresh(false); }
